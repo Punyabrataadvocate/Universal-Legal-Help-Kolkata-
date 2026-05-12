@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Globals
+    function isSignedIn() { return request.auth != null; }
+    
+    // Admins Checks (Email from ADMIN_EMAILS or exists in admins collection)
+    function isAdmin() {
+      let email = request.auth.token.email.lower();
+      return (email == 'mukherjipb@gmail.com' || email == '1legalhelpkolkata@gmail.com') ||
+             exists(/databases/$(database)/documents/admins/$(email));
+    }
+
+    match /user_queries/{queryId} {
+      allow create: if true; // Public submission
+      allow read, update, delete: if isSignedIn() && isAdmin();
+    }
+
+    match /public_advocates/{advocateId} {
+      allow read: if true; // Publicly visible directory
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    match /advocate_registrations/{registrationId} {
+      // Pending registrations
+      allow create: if isSignedIn();
+      allow read, update, delete: if isSignedIn() && isAdmin();
+    }
+
+    match /blog_posts/{postId} {
+      allow read: if true; // Public articles
+      allow create: if true; // Users can post QnA
+      allow update, delete: if isSignedIn() && isAdmin();
+
+      match /answers/{answerId} {
+        allow read: if true;
+        allow create, update, delete: if isSignedIn() && isAdmin();
+      }
+    }
+
+    match /admins/{email} {
+      allow read: if true; // needed to check if admin
+      allow write: if isSignedIn() && isAdmin();
+    }
+    
+    match /test/connection {
+      allow read: if true;
+    }
+    
+    // Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
