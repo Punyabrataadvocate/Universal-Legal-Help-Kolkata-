@@ -21,6 +21,7 @@ export default function AdvocateRegistration() {
   const navigate = useNavigate();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -53,11 +54,24 @@ export default function AdvocateRegistration() {
 
   const handleGoogleLogin = async () => {
     try {
+      setIsLoggingIn(true);
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed", error);
-      alert("Failed to sign in. Please try again.");
+      if (error.code === 'auth/popup-blocked') {
+        alert("Sign-in popup was blocked by your browser. Please allow popups for this site, or open it in a new tab to complete login.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup before finishing, no need to alert aggressively
+        console.log("Sign-in popup closed by user.");
+      } else {
+        alert("Failed to sign in. Please try again. " + (error.message || ''));
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -130,10 +144,20 @@ export default function AdvocateRegistration() {
             </p>
             <Button 
               onClick={handleGoogleLogin} 
+              disabled={isLoggingIn}
               className="w-full h-14 rounded-2xl bg-white text-gray-800 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-bold tracking-wide shadow-sm"
             >
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
-              Sign in with Google
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  Connecting to Google...
+                </>
+              ) : (
+                <>
+                  <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
+                  Sign in with Google
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
