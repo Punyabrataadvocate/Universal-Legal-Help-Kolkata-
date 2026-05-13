@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, BookOpen, Scale, MapPin, ArrowRight, UserCircle, Globe, Gavel, Mail, Phone, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { LEGAL_ARTICLES } from '@/constants/articles';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const CYCLIC_COLORS = [
   'bg-[#292f70] shadow-xl', // Deep Blue
@@ -18,9 +20,29 @@ const CYCLIC_COLORS = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const [showDeletionOptions, setShowDeletionOptions] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState('');
+  const [dialogTitle, setDialogTitle] = useState('');
+
+  const openDialog = (title: string, content: string) => {
+    setDialogTitle(title);
+    setDialogContent(content);
+    setDialogOpen(true);
+  };
 
   return (
     <div className="flex flex-col min-h-[100vh] bg-[#0d1b2a] text-white">
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="bg-[#1f2c41] text-white border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-serif text-[#c9a84c] tracking-wider">{dialogTitle}</DialogTitle>
+            <DialogDescription className="text-white/80 mt-4 leading-relaxed font-serif italic text-[15px]">
+              {dialogContent}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
       {/* Top Header */}
       <header className="flex items-center justify-between p-4 pt-6 z-10">
         <div className="flex items-center gap-2">
@@ -165,7 +187,21 @@ export default function Home() {
            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
            <Link to="/disclaimer" className="hover:text-white transition-colors">BCI Disclaimer</Link>
-           <button className="text-red-900/80 hover:text-red-500 transition-colors uppercase font-black tracking-widest text-left">Account Deletion</button>
+           <div className="flex flex-col w-full text-left">
+             <button 
+               onClick={() => setShowDeletionOptions(!showDeletionOptions)}
+               className="text-red-900/80 hover:text-red-500 transition-colors uppercase font-black tracking-widest text-left py-2"
+             >
+               Account Deletion
+             </button>
+             {showDeletionOptions && (
+               <div className="flex flex-col space-y-3 pl-4 border-l-2 border-red-900/30 mt-2 py-2">
+                 <button onClick={() => openDialog("Self-Deletion: Advocate Registration", "Please securely log in to the Advocate Directory and navigate to your profile settings to self-delete your registration.")} className="text-[10px] text-red-500/80 hover:text-red-400 text-left uppercase tracking-widest font-bold">1. Self-Deletion: Advocate Registration</button>
+                 <button onClick={() => openDialog("Self-Deletion by Blog Posts and Answers", "Please securely log in and visit your Q&A dashboard to delete your posts and answers.")} className="text-[10px] text-red-500/80 hover:text-red-400 text-left uppercase tracking-widest font-bold">2. Self-Deletion by Blog Posts and Answers</button>
+                 <button onClick={() => openDialog("Self-Deletion Legal Query Submissions", "Please securely log in to withdraw or delete your submitted legal queries.")} className="text-[10px] text-red-500/80 hover:text-red-400 text-left uppercase tracking-widest font-bold">3. Self-Deletion Legal Query Submissions</button>
+               </div>
+             )}
+           </div>
          </div>
          
          <h4 className="text-[10px] font-black tracking-[0.3em] uppercase text-white/30 mb-6 border-b border-white/5 pb-4 w-full text-left">LEGAL COMPLIANCE</h4>
