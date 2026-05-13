@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, FileText, ChevronDown, Scale, HelpCircle, MessageSquare } from 'lucide-react';
 import { LEGAL_ARTICLES } from '@/constants/articles';
-import { db } from '@/lib/firebase';
+import { DEFAULT_QNA } from '@/constants/qna';
+import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { ADMIN_EMAILS } from '@/constants/admins';
 
 const STATUTES = [
   {
@@ -69,7 +73,10 @@ const STATUTES = [
 ];
 
 export default function Blog() {
-  const [activeTab, setActiveTab] = useState<'information' | 'statutes' | 'qna'>('information');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'information' | 'statutes' | 'qna'>(
+    location.state?.activeTab || 'information'
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   
@@ -77,6 +84,64 @@ export default function Blog() {
   const [askTitle, setAskTitle] = useState('');
   const [askContent, setAskContent] = useState('');
   const [isAsking, setIsAsking] = useState(false);
+  
+  const [user] = useAuthState(auth);
+  const [isResponder, setIsResponder] = useState(false);
+  const [responderName, setResponderName] = useState('');
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
+
+  const CARD_COLORS = [
+    "from-[#1f2c41] to-[#1f2c41]",
+    "from-indigo-900/30 to-[#1f2c41]",
+    "from-emerald-900/20 to-[#1f2c41]",
+    "from-rose-900/20 to-[#1f2c41]",
+    "from-sky-900/20 to-[#1f2c41]",
+    "from-amber-900/20 to-[#1f2c41]"
+  ];
+
+  useEffect(() => {
+    const checkResponder = async () => {
+      if (!user) {
+        setIsResponder(false);
+        return;
+      }
+      const email = (user.email || '').toLowerCase().trim();
+      if (ADMIN_EMAILS.map(e => e.toLowerCase().trim()).includes(email)) {
+        setIsResponder(true);
+        setResponderName('Admin | Legal Help Kolkata');
+        return;
+      }
+      try {
+        const advSnap = await getDocs(collection(db, 'advocate_registrations'));
+        const adv = advSnap.docs.map(d => d.data()).find(d => d.uid === user.uid && d.status === 'approved');
+        if (adv) {
+          setIsResponder(true);
+          setResponderName(`Adv. ${adv.fullName}`);
+        } else {
+          setIsResponder(false);
+        }
+      } catch (e) {
+        console.error("Responder check error", e);
+      }
+    };
+    checkResponder();
+  }, [user]);
+
+  const handlePostAnswer = async (postId: string) => {
+    const text = replyText[postId];
+    if (!text?.trim()) return;
+    try {
+      await addDoc(collection(db, `blog_posts/${postId}/answers`), {
+        text,
+        author: responderName,
+        createdAt: serverTimestamp()
+      });
+      setReplyText(prev => ({ ...prev, [postId]: '' }));
+    } catch (e) {
+      console.error(e);
+      alert('Failed to post answer.');
+    }
+  };
 
   useEffect(() => {
     const qBlog = query(collection(db, 'blog_posts'), orderBy('createdAt', 'desc'));
@@ -90,7 +155,7 @@ export default function Blog() {
         const ansSnap = await getDocs(collection(db, `blog_posts/${q.id}/answers`));
         q.answers = ansSnap.docs.map(a => ({ id: a.id, ...a.data() }));
       }
-      setQuestions(userQuestions);
+      setQuestions([...userQuestions, ...DEFAULT_QNA.map(q => ({...q, isStatic: true}))]);
     });
     return () => unsub();
   }, []);
@@ -132,16 +197,22 @@ export default function Blog() {
     item.act.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredQuestions = questions.filter(q => 
+    q.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    q.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    q.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex flex-col min-h-[100vh] bg-[#0d1b2a] text-white">
       
       {/* Header Area */}
       <section className="px-6 pt-12 pb-8 text-center space-y-4">
-        <h3 className="text-[11px] font-black tracking-[0.3em] text-[#c9a84c] uppercase">
+        <h3 className="text-[11px] font-black tracking-[0.3em] text-zinc-400 uppercase">
           Public Archives
         </h3>
         <h1 className="text-5xl font-serif font-bold italic tracking-tight leading-none text-white">
-          Legal <br /> Knowledge <br /> <span className="text-[#c9a84c]">Base</span>
+          Legal <br /> Knowledge <br /> <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent">Base</span>
         </h1>
         <p className="text-[15px] font-serif italic text-white/70 leading-relaxed max-w-[320px] mx-auto mt-6">
           "Factual legal information and awareness points to help citizens understand procedures in West Bengal. These are for educational purposes only."
@@ -227,7 +298,7 @@ export default function Blog() {
                       <ChevronDown className={`w-5 h-5 text-white/50 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
                     {isExpanded && (
-                      <div className="mt-4 pl-4 border-l-2 border-[#c9a84c]/50 py-1">
+                      <div className="mt-4 pl-4 border-l-2 border-slate-500/50 py-1">
                         <p className="text-[14px] text-white/80 font-serif italic leading-relaxed">
                           {item.content}
                         </p>
@@ -245,23 +316,23 @@ export default function Blog() {
 
         {activeTab === 'statutes' && (
           <div className="space-y-4 border-t border-transparent">
-            {filteredStatutes.map((statute) => (
-              <Card key={statute.id} className="bg-[#1f2c41] border border-white/5 shadow-xl rounded-[2rem] overflow-hidden">
+            {filteredStatutes.map((statute, index) => (
+              <Card key={statute.id} className={`bg-gradient-to-br ${CARD_COLORS[(index + 3) % CARD_COLORS.length]} border border-white/5 shadow-xl rounded-[2rem] overflow-hidden`}>
                 <CardContent className="p-6 md:p-8 relative">
                   <div className="absolute top-6 right-6">
-                    <Scale className="w-8 h-8 text-white/10" strokeWidth={1} />
+                    <Scale className="w-8 h-8 text-white/5" strokeWidth={1} />
                   </div>
-                  <Badge className="bg-[#581c87]/40 text-[#d8b4fe] border border-[#581c87]/50 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.2em] font-black mb-4 inline-block">
+                  <Badge className="bg-[#0f172a]/60 text-zinc-300 border border-[#581c87]/30 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.2em] font-black mb-4 inline-block shadow-sm">
                     {statute.act}
                   </Badge>
                   <h3 className="text-3xl font-serif font-bold italic text-white mb-2 leading-none">
                     {statute.title}
                   </h3>
-                  <p className="text-white/60 text-[13px] font-medium leading-snug mb-6 max-w-[90%]">
+                  <p className="text-white/70 text-[14px] font-serif italic mb-6 max-w-[90%]">
                     {statute.subtitle}
                   </p>
                   
-                  <div className="bg-[#0d1b2a]/50 p-5 rounded-2xl border-l-4 border-[#c9a84c] shadow-inner">
+                  <div className="bg-[#0f172a]/40 p-5 rounded-2xl border-l-4 border-zinc-500/50 shadow-inner">
                     <p className="text-[14px] text-white/90 font-serif italic leading-relaxed">
                       {statute.content}
                     </p>
@@ -280,12 +351,12 @@ export default function Blog() {
             <div className="bg-[#1f2c41] rounded-[2rem] p-6 border border-white/5 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="bg-white/10 p-2 rounded-xl">
-                     <HelpCircle className="w-5 h-5 text-gold" />
+                  <div className="bg-[#0f172a]/80 p-2 rounded-xl border border-white/5 shadow-inner">
+                     <HelpCircle className="w-5 h-5 text-zinc-300" />
                   </div>
                   <h2 className="text-xl font-serif font-bold text-white tracking-tight">Ask a Legal Question</h2>
                 </div>
-                <Button variant={isAsking ? 'secondary' : 'default'} onClick={() => setIsAsking(!isAsking)} className="text-xs bg-gold hover:bg-gold/80 text-black">
+                <Button variant={isAsking ? 'secondary' : 'default'} onClick={() => setIsAsking(!isAsking)} className={`text-xs transition-all duration-300 ${isAsking ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-zinc-200 hover:bg-zinc-300 text-zinc-900 shadow-[0_0_15px_rgba(228,228,231,0.15)]'}`}>
                   {isAsking ? 'Cancel' : 'Ask Question'}
                 </Button>
               </div>
@@ -304,7 +375,7 @@ export default function Blog() {
                      onChange={(e) => setAskContent(e.target.value)}
                      className="bg-[#0d1b2a] border-white/10 text-white min-h-[120px]"
                    />
-                   <Button onClick={handleAskQuestion} className="w-full bg-[#c9a84c] text-black hover:bg-[#b09038]">
+                   <Button onClick={handleAskQuestion} className="w-full bg-zinc-200 text-zinc-900 hover:bg-zinc-300 shadow-[0_0_15px_rgba(228,228,231,0.15)] transition-all">
                      Submit Question
                    </Button>
                 </div>
@@ -312,47 +383,64 @@ export default function Blog() {
             </div>
 
             <div className="space-y-4">
-               {questions.map((q) => (
-                 <Card key={q.id} className="bg-[#1f2c41] border border-white/5 shadow-xl rounded-[2rem] overflow-hidden">
+               {filteredQuestions.map((q, index) => (
+                 <Card key={q.id} className={`bg-gradient-to-br ${CARD_COLORS[index % CARD_COLORS.length]} border border-white/5 shadow-xl rounded-[2rem] overflow-hidden`}>
                    <CardContent className="p-6 md:p-8 space-y-4">
                      <div>
-                       <Badge className="bg-[#c9a84c]/20 text-[#c9a84c] border-none mb-3 text-[10px] tracking-widest uppercase">
+                       <Badge className="bg-[#0f172a]/80 text-zinc-300 border border-zinc-700 mb-3 text-[10px] tracking-widest uppercase shadow-sm">
                          {q.category}
                        </Badge>
                        <h3 className="text-xl font-serif font-bold text-white mb-2 leading-tight">
                          {q.title}
                        </h3>
-                       <p className="text-white/70 text-sm italic font-serif leading-relaxed">
+                       <p className="text-white/80 text-[15px] italic font-serif leading-relaxed">
                          "{q.content}"
                        </p>
-                       <p className="text-[10px] text-white/40 mt-3 uppercase tracking-widest">
-                         Asked by {q.authorName} • {q.createdAt?.toDate ? q.createdAt.toDate().toLocaleDateString() : 'Just now'}
+                       <p className="text-[10px] text-white/50 mt-3 uppercase tracking-widest">
+                         Asked by {q.authorName || 'Anonymous'} {q.createdAt?.toDate ? `• ${q.createdAt.toDate().toLocaleDateString()}` : ''}
                        </p>
                      </div>
 
                      {q.answers && q.answers.length > 0 && (
-                       <div className="bg-[#0d1b2a]/50 p-5 rounded-2xl border-l-2 border-gold mt-4 space-y-4">
-                         <h4 className="text-[10px] uppercase tracking-widest text-gold font-black flex items-center gap-2">
+                       <div className="bg-[#0f172a]/60 p-5 rounded-2xl border-l-2 border-zinc-500 mt-4 space-y-4 shadow-inner">
+                         <h4 className="text-[10px] uppercase tracking-widest text-zinc-400 font-black flex items-center gap-2">
                            <MessageSquare className="w-3 h-3" />
                            Official Answers
                          </h4>
                          {q.answers.map((ans: any) => (
-                           <div key={ans.id} className="space-y-2">
-                             <p className="text-sm text-white/90 leading-relaxed font-serif italic">
+                           <div key={ans.id} className="space-y-2 relative">
+                             <p className="text-[14px] text-white/90 leading-relaxed font-serif italic">
                                "{ans.text}"
                              </p>
-                             <p className="text-[10px] text-gold/80 block">
+                             <p className="text-[10px] text-zinc-400 block font-bold tracking-widest uppercase">
                                — {ans.author}
                              </p>
                            </div>
                          ))}
                        </div>
                      )}
+
+                     {isResponder && !q.isStatic && (
+                       <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+                         <Textarea 
+                           placeholder="Type your authoritative answer here..." 
+                           value={replyText[q.id] || ''}
+                           onChange={(e) => setReplyText(prev => ({ ...prev, [q.id]: e.target.value }))}
+                           className="bg-black/20 border-white/10 text-white min-h-[80px]"
+                         />
+                         <Button 
+                           onClick={() => handlePostAnswer(q.id)}
+                           className="text-xs bg-zinc-200 text-zinc-900 hover:bg-zinc-300 transition-all font-bold tracking-widest uppercase rounded-xl"
+                         >
+                           Post Answer as {responderName}
+                         </Button>
+                       </div>
+                     )}
                    </CardContent>
                  </Card>
                ))}
-               {questions.length === 0 && (
-                 <div className="text-center py-10 text-white/50 text-sm italic">No user questions yet. Be the first to ask!</div>
+               {filteredQuestions.length === 0 && (
+                 <div className="text-center py-10 text-white/50 text-sm italic">No matching questions found.</div>
                )}
             </div>
           </div>

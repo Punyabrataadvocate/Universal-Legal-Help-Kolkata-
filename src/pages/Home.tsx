@@ -61,7 +61,7 @@ export default function Home() {
       {/* Action Strip */}
       <section className="px-5 pb-8 space-y-4 flex flex-col items-center">
         <Button 
-          onClick={() => navigate('/blog')}
+          onClick={() => navigate('/blog', { state: { activeTab: 'qna' } })}
           className="w-full bg-transparent border border-[#c9a84c]/50 hover:bg-[#c9a84c]/10 text-[#c9a84c] font-bold text-[13px] tracking-[0.2em] h-16 rounded-[1.5rem] uppercase active:scale-[0.98] transition-all"
         >
           Q & A & Free Legal Help Blog
