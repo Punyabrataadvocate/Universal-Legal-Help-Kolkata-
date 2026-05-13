@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,11 @@ import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function AdminPortal({ userEmail }: { userEmail: string }) {
-  const [activeTab, setActiveTab] = useState<'queries' | 'advocates' | 'blog'>('queries');
+  const [activeTab, setActiveTab] = useState<'queries' | 'advocates' | 'directory' | 'blog'>('queries');
   
   const [queries, setQueries] = useState<any[]>([]);
   const [advocates, setAdvocates] = useState<any[]>([]);
+  const [publicAdvocates, setPublicAdvocates] = useState<any[]>([]);
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
 
@@ -31,27 +32,39 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
       setAdvocates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
+    // Public Directory
+    const qPubAdv = query(collection(db, 'public_advocates'));
+    const unsubPubAdv = onSnapshot(qPubAdv, snap => {
+      setPublicAdvocates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     // 3. Blog Questions (Let's assume "blog_posts" collection has type="question" and "answer")
     const qBlog = query(collection(db, 'blog_posts'), orderBy('createdAt', 'desc'));
-    const unsubBlog = onSnapshot(qBlog, snap => {
-      setBlogPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((post: any) => post.type === 'question'));
+    const unsubBlog = onSnapshot(qBlog, async snap => {
+      const posts = snap.docs.map(d => ({ id: d.id, ...d.data(), answers: [] as any[] }))
+        .filter((post: any) => post.type === 'question');
+
+      for (const q of posts) {
+        const ansSnap = await getDocs(collection(db, `blog_posts/${q.id}/answers`));
+        q.answers = ansSnap.docs.map(a => ({ id: a.id, ...a.data() }));
+      }
+      setBlogPosts(posts);
     });
 
     return () => {
       unsubQueries();
       unsubAdv();
+      unsubPubAdv();
       unsubBlog();
     };
   }, []);
 
   const handleUpdateAdvocate = async (id: string, status: 'approved' | 'rejected') => {
-    if (confirm(`Are you sure you want to ${status} this advocate?`)) {
-      try {
-        await updateDoc(doc(db, 'advocate_registrations', id), { status });
-      } catch (e) {
-        console.error("Error updating advocate:", e);
-        alert("Failed to update status. Check permissions.");
-      }
+    try {
+      await updateDoc(doc(db, 'advocate_registrations', id), { status });
+    } catch (e) {
+      console.error("Error updating advocate:", e);
+      alert(`Failed to update status. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
     }
   };
 
@@ -77,20 +90,50 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
 
   const handleApproveAdvocate = async (advocate: any) => {
      await handleUpdateAdvocate(advocate.id, 'approved');
-     if (confirm('Do you also want to publish this advocate to the public directory now?')) {
-        await publishToPublicAdvocates({ ...advocate, status: 'approved' });
-     }
+     // Auto publish without confirm
+     await publishToPublicAdvocates({ ...advocate, status: 'approved' });
   };
 
   const handleDeleteQuery = async (id: string) => {
-    if (confirm("Delete this query?")) {
+    try {
       await deleteDoc(doc(db, 'user_queries', id));
+    } catch (e) {
+      console.error("Error deleting query:", e);
+      alert(`Failed to delete query. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
+    }
+  };
+
+  const handleDeletePublicAdvocate = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'public_advocates', id));
+    } catch (e) {
+      console.error("Error removing public advocate:", e);
+      alert(`Failed to remove public advocate. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
     }
   };
 
   const handleDeleteBlog = async (id: string) => {
-    if (confirm("Delete this post?")) {
+    try {
       await deleteDoc(doc(db, 'blog_posts', id));
+    } catch (e) {
+      console.error("Error deleting blog post:", e);
+      alert(`Failed to delete blog post. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
+    }
+  };
+
+  const handleDeleteBlogAnswer = async (postId: string, answerId: string) => {
+    try {
+      await deleteDoc(doc(db, `blog_posts/${postId}/answers`, answerId));
+      // Refresh local state without waiting for full poll
+      setBlogPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return { ...p, answers: p.answers.filter((a: any) => a.id !== answerId) };
+        }
+        return p;
+      }));
+    } catch (e) {
+      console.error("Error deleting answer:", e);
+      alert(`Failed to delete answer. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
     }
   };
 
@@ -142,6 +185,13 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
           >
             <CheckCircle className="w-4 h-4 mx-auto mb-1" />
             Registrations
+          </button>
+          <button 
+            className={`flex-1 py-4 font-bold text-sm text-center border-b-2 transition-all ${activeTab === 'directory' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => setActiveTab('directory')}
+          >
+            <CheckCircle className="w-4 h-4 mx-auto mb-1" />
+            Public Directory
           </button>
           <button 
             className={`flex-1 py-4 font-bold text-sm text-center border-b-2 transition-all ${activeTab === 'blog' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
@@ -233,6 +283,32 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
             </div>
           )}
 
+          {/* DIRECTORY TAB */}
+          {activeTab === 'directory' && (
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                 <p className="text-gray-500">Manage advocates that are visible in the public directory.</p>
+              </div>
+              {publicAdvocates.length === 0 ? <p className="text-gray-500 text-center py-10">No advocates in public directory.</p> : null}
+              {publicAdvocates.map(adv => (
+                <div key={adv.id} className="bg-white border shadow-sm rounded-2xl p-6 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-bold text-xl font-serif">{adv.fullName}</h4>
+                    <p className="text-sm text-gray-500 mt-1">{adv.enrollmentNumber} • {adv.barCouncil}</p>
+                    <div className="flex gap-2 mt-2">
+                       {adv.specialization?.slice(0, 3).map((spec: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-[10px]">{spec}</Badge>
+                       ))}
+                    </div>
+                  </div>
+                  <Button variant="ghost" onClick={() => handleDeletePublicAdvocate(adv.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                    <Trash2 className="w-4 h-4 mr-2" /> Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* BLOG MODERATION */}
           {activeTab === 'blog' && (
              <div className="p-6 space-y-4">
@@ -266,6 +342,22 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
                     </div>
 
                     {/* Render subcollection of answers. Note: For simplicity, admin might want to view existing answers here. The `blog_posts` would need real answers fetch subcollection, but for now we just show capability to post. */}
+                    {post.answers && post.answers.length > 0 && (
+                      <div className="mt-4 space-y-4 border-l-2 border-gray-200 pl-4">
+                        <Label className="text-xs font-bold text-gray-500 uppercase">Existing Answers</Label>
+                        {post.answers.map((ans: any) => (
+                           <div key={ans.id} className="bg-gray-50 p-3 rounded-xl flex justify-between items-start">
+                             <div>
+                               <p className="text-sm italic">"{ans.text}"</p>
+                               <p className="text-xs text-gray-400 mt-1">— {ans.author}</p>
+                             </div>
+                             <Button variant="ghost" size="icon" onClick={() => handleDeleteBlogAnswer(post.id, ans.id)} className="text-red-400 hover:text-red-500 hover:bg-red-50 shrink-0">
+                               <Trash2 className="w-4 h-4" />
+                             </Button>
+                           </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
              </div>

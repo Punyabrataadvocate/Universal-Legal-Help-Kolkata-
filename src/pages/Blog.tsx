@@ -148,7 +148,7 @@ export default function Blog() {
     const unsub = onSnapshot(qBlog, async (snap) => {
       const posts = snap.docs.map(d => ({ id: d.id, ...d.data(), answers: [] as any[] }));
       // Filter only questions
-      const userQuestions = posts.filter(p => p.type === 'question');
+      const userQuestions = posts.filter((p: any) => p.type === 'question');
       
       // Fetch answers for user questions
       for (const q of userQuestions) {
