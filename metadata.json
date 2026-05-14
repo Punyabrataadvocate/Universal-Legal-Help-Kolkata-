@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Legal Help Kolkata",
+  "description": "A high-performance Capacitor-powered native legal awareness app for Kolkata, featuring offline support, haptic feedback, and TWA integration.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["offline_support", "native_haptics", "push_notifications", "capacitor_bridge"]
 }

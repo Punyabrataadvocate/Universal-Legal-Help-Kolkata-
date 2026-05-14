@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, BookOpen, Scale, MapPin, ArrowRight, UserCircle, Globe, Gavel, Mail, Phone, Clock } from 'lucide-react';
+import { Shield, BookOpen, Scale, MapPin, ArrowRight, UserCircle, Globe, Gavel, Mail, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { LEGAL_ARTICLES } from '@/constants/articles';
@@ -178,10 +178,7 @@ export default function Home() {
                <Phone className="w-4 h-4 text-gold flex-shrink-0" />
                <span className="text-white/80">+91 8697457657</span>
             </div>
-            <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl justify-start">
-               <Clock className="w-4 h-4 text-gold flex-shrink-0" />
-               <span className="text-white/80">Available: 24 Hours</span>
-            </div>
+
          </div>
          
          <h4 className="text-[10px] font-black tracking-[0.3em] uppercase text-gold mb-6 border-b border-white/10 pb-4 w-full text-left">QUICK NAVIGATION</h4>
@@ -231,6 +228,8 @@ export default function Home() {
              <span>|</span>
              <Link to="/privacy" className="hover:text-white border-b border-transparent hover:border-white">PRIVACY</Link>
              <span>|</span>
+              <Link to="/delete-data" className="hover:text-white border-b border-transparent hover:border-white">DELETE DATA</Link>
+              <span>|</span>
              <Link to="/disclaimer" className="hover:text-white border-b border-transparent hover:border-white">COMPLIANCE</Link>
            </div>
            <p className="mt-8 text-[8px] leading-relaxed max-w-[300px] mx-auto normal-case font-serif italic pb-8">

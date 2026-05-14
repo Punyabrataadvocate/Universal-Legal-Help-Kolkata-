@@ -1,35 +1,61 @@
 import { Landmark, Users, MessageSquareText, FileText, Scale } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { triggerHaptic } from '@/lib/native';
+import { ImpactStyle } from '@capacitor/haptics';
 
 export default function BottomNav() {
   const location = useLocation();
 
+  const handleNavClick = () => {
+    triggerHaptic(ImpactStyle.Light);
+  };
+
   if (location.pathname === '/disclaimer') return null;
 
   return (
-    <nav className="absolute md:fixed bottom-0 w-full bg-[#1a2332]/95 backdrop-blur-xl border-t border-white/5 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+    <nav className="fixed bottom-0 w-full bg-[#1a2332]/95 backdrop-blur-xl border-t border-white/5 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] padding-safe-bottom">
       <div className="flex justify-between items-center h-[70px] relative px-6">
         
         {/* Left Side */}
-        <Link to="/" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
+        <Link 
+          to="/" 
+          onClick={handleNavClick}
+          className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}
+        >
           <Landmark className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
-        <Link to="/directory" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/directory' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
+        <Link 
+          to="/directory" 
+          onClick={handleNavClick}
+          className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/directory' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}
+        >
           <Users className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
 
         {/* Center Floating Button */}
         <div className="relative -top-5 flex justify-center w-16">
-          <Link to="/query" className="bg-[#b38b3a] shadow-[0_4px_15px_rgba(179,139,58,0.4)] w-14 h-14 rounded-2xl flex items-center justify-center transform transition-transform active:scale-95 border-2 border-[#1a2332]">
+          <Link 
+            to="/query" 
+            onClick={handleNavClick}
+            className="bg-[#b38b3a] shadow-[0_4px_15px_rgba(179,139,58,0.4)] w-14 h-14 rounded-2xl flex items-center justify-center transform transition-transform active:scale-95 border-2 border-[#1a2332]"
+          >
             <MessageSquareText className="w-6 h-6 text-[#1a2332] stroke-[2px]" />
           </Link>
         </div>
 
         {/* Right Side */}
-        <Link to="/blog" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/blog' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
+        <Link 
+          to="/blog" 
+          onClick={handleNavClick}
+          className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/blog' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}
+        >
           <FileText className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
-        <Link to="/judgments" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/judgments' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
+        <Link 
+          to="/judgments" 
+          onClick={handleNavClick}
+          className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/judgments' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}
+        >
           <Scale className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
         

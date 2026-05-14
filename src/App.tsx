@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Disclaimer from './pages/Disclaimer';
 import Terms from './pages/Terms';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import DeleteData from './pages/DeleteData';
 import QueryForm from './pages/QueryForm';
 import Directory from './pages/Directory';
 
@@ -18,8 +19,11 @@ import LegalJudgments from './pages/LegalJudgments';
 import AdminRouteWrapper from './pages/AdminRouteWrapper';
 import AdvocateRegistration from './pages/AdvocateRegistration';
 import BottomNav from './components/BottomNav';
-import { Scale } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Scale, WifiOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { requestPushPermission } from './lib/native';
+import { db } from './lib/firebase';
+import { onSnapshot, doc } from 'firebase/firestore';
 
 function SplashScreen() {
   return (
@@ -49,6 +53,7 @@ function SplashScreen() {
 export default function App() {
   const [agreed, setAgreed] = useState<boolean | null>(null);
   const [showSplash, setShowSplash] = useState(true);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
     const isAgreed = localStorage.getItem('disclaimerAgreed');
@@ -56,19 +61,49 @@ export default function App() {
     
     // Show splash for 5 seconds
     const timer = setTimeout(() => setShowSplash(false), 5000);
-    return () => clearTimeout(timer);
+
+    // Native initialization
+    requestPushPermission().catch(console.error);
+
+    // Offline health check
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   if (agreed === null) return null; // loading state
 
   return (
-    <div className="app-container relative flex flex-col h-[100dvh] overflow-hidden">
+    <div className="app-container relative flex flex-col h-[100dvh] overflow-hidden bg-[#0d1b2a]">
       {showSplash && <SplashScreen />}
-      <div className={`flex-1 overflow-y-auto no-scrollbar pb-20 ${showSplash ? 'hidden' : 'block'}`}>
+      
+      <AnimatePresence>
+        {isOffline && (
+          <motion.div 
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed top-0 left-0 right-0 z-[110] bg-red-500/90 backdrop-blur-md px-6 py-3 flex items-center justify-center gap-3 margin-safe-top"
+          >
+            <WifiOff className="w-4 h-4 text-white" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">Connection Lost. Operating Offline.</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className={`flex-1 overflow-y-auto no-scrollbar pb-20 padding-safe-top ${showSplash ? 'hidden' : 'block'}`}>
         <Routes>
           <Route path="/disclaimer" element={<Disclaimer setAgreed={setAgreed} />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/delete-data" element={<DeleteData />} />
           
           {/* Protected Routes (Require Disclaimer) */}
           <Route path="/" element={agreed ? <Home /> : <Navigate to="/disclaimer" />} />

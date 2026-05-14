@@ -131,6 +131,8 @@ h1, h2, h3, h4, h5, h6 {
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 :root {
@@ -223,5 +225,21 @@ h1, h2, h3, h4, h5, h6 {
   .no-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
+  }
+
+  .padding-safe-top {
+    padding-top: var(--safe-area-top);
+  }
+
+  .padding-safe-bottom {
+    padding-bottom: var(--safe-area-bottom);
+  }
+
+  .margin-safe-top {
+    margin-top: var(--safe-area-top);
+  }
+
+  .margin-safe-bottom {
+    margin-bottom: var(--safe-area-bottom);
   }
 }
