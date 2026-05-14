@@ -25,7 +25,7 @@ service cloud.firestore {
 
     match /advocate_registrations/{registrationId} {
       // Pending registrations
-      allow create: if isSignedIn();
+      allow create: if true;
       allow read, update, delete: if isSignedIn() && isAdmin();
     }
 

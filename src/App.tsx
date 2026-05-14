@@ -14,6 +14,7 @@ import Directory from './pages/Directory';
 
 import Blog from './pages/Blog';
 
+import AdminRouteWrapper from './pages/AdminRouteWrapper';
 import AdvocateRegistration from './pages/AdvocateRegistration';
 import BottomNav from './components/BottomNav';
 import { Scale } from 'lucide-react';
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/directory" element={agreed ? <Directory /> : <Navigate to="/disclaimer" />} />
           <Route path="/blog" element={agreed ? <Blog /> : <Navigate to="/disclaimer" />} />
           <Route path="/advocate-login" element={agreed ? <AdvocateRegistration /> : <Navigate to="/disclaimer" />} />
+          <Route path="/admin-mlk-2024" element={agreed ? <AdminRouteWrapper /> : <Navigate to="/disclaimer" />} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />

@@ -241,10 +241,15 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-xl font-serif">{adv.fullName}</h4>
-                        <Badge className={
+                        <Badge className={`uppercase text-[10px] ${
                           adv.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                          adv.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                        }>{adv.status.toUpperCase()}</Badge>
+                          adv.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                        }`}>{adv.status}</Badge>
+                        {adv.registrationMethod === 'google' ? (
+                          <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px]">Google Verified</Badge>
+                        ) : adv.registrationMethod === 'direct' ? (
+                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-[10px]">Direct Submission</Badge>
+                        ) : null}
                       </div>
                       <p className="text-sm text-gray-500 mt-1">{adv.email} • {adv.phone}</p>
                     </div>

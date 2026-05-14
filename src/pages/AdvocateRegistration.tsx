@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { signInWithPopup, GoogleAuthProvider, signOut, signInWithRedirect } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { LEGAL_CATEGORIES } from '@/constants/legal';
 import { ADMIN_EMAILS } from '@/constants/admins';
-import AdminPortal from '@/components/AdminPortal';
 import { handleFirestoreError, OperationType } from '@/lib/firestoreErrorHandler';
 import { motion } from 'motion/react';
 
@@ -23,20 +22,29 @@ export default function AdvocateRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  
+  const [registrationMethod, setRegistrationMethod] = useState<'google' | 'direct' | null>(null);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [googleUser, setGoogleUser] = useState<any>(null);
 
-  React.useEffect(() => {
-    if (user && user.email) {
-       const email = user.email.toLowerCase().trim();
-       if (ADMIN_EMAILS.includes(email)) {
-          setIsAdmin(true);
+  useEffect(() => {
+    if (user && user.email && !showRegistrationForm && registrationMethod !== 'direct') {
+       const userEmail = user.email.toLowerCase().trim();
+       const adminEmailsSet = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
+       if (adminEmailsSet.includes(userEmail)) {
+         navigate('/admin-mlk-2024');
        } else {
-          setIsAdmin(false);
+         setGoogleUser(user);
+         setRegistrationMethod('google');
+         setFormData(prev => ({
+           ...prev,
+           email: user.email || '',
+           fullName: prev.fullName || user.displayName || ''
+         }));
+         setShowRegistrationForm(true);
        }
-    } else {
-       setIsAdmin(false);
     }
-  }, [user]);
+  }, [user, showRegistrationForm, registrationMethod, navigate]);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -59,21 +67,37 @@ export default function AdvocateRegistration() {
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const userEmail = result.user.email?.toLowerCase().trim() || "";
+      
+      const adminEmailsSet = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
+      if (adminEmailsSet.includes(userEmail)) {
+        navigate('/admin-mlk-2024');
+      } else {
+        setGoogleUser(result.user);
+        setRegistrationMethod('google');
+        setFormData(prev => ({
+          ...prev,
+          email: result.user.email || '',
+          fullName: result.user.displayName || ''
+        }));
+        setShowRegistrationForm(true);
+      }
     } catch (error: any) {
       console.error("Login failed", error);
       if (error.code === 'auth/popup-blocked') {
-        alert("Sign-in popup was blocked by your browser. Please allow popups for this site, or open it in a new tab to complete login.");
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        // User closed the popup before finishing, no need to alert aggressively
-        console.log("Sign-in popup closed by user.");
-      } else {
-        alert("Failed to sign in. Please try again. " + (error.message || ''));
+        await signInWithRedirect(auth, new GoogleAuthProvider());
       }
     } finally {
       setIsLoggingIn(false);
     }
   };
+
+  const handleDirectRegistration = () => {
+    setRegistrationMethod('direct');
+    setShowRegistrationForm(true);
+  };
+
 
   const handleSpecializationChange = (category: string, checked: boolean) => {
     setFormData(prev => {
@@ -111,7 +135,8 @@ export default function AdvocateRegistration() {
         courtOfPractice: formData.courtOfPractice,
         specialization: formData.specialization,
         status: 'pending',
-        uid: user?.uid,
+        registrationMethod: registrationMethod || 'direct',
+        googleUid: registrationMethod === 'google' ? googleUser?.uid || null : null,
         createdAt: serverTimestamp()
       });
       setIsSuccess(true);
@@ -125,22 +150,69 @@ export default function AdvocateRegistration() {
     }
   };
 
+  const handleCloseSuccess = () => {
+    if (registrationMethod === 'google') {
+      signOut(auth);
+    }
+    setIsSuccess(false);
+    setShowRegistrationForm(false);
+    setRegistrationMethod(null);
+    setFormData({
+      fullName: '',
+      phone: '',
+      email: '',
+      enrollmentNumber: '',
+      barCouncil: '',
+      experienceYears: '',
+      courtOfPractice: '',
+      specialization: [],
+      disclaimerAccepted: false
+    });
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  if (!user) {
+  if (isSuccess) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-6 bg-white p-10 rounded-[2rem] shadow-xl border border-gray-100 max-w-lg w-full relative"
+        >
+          <div className="flex justify-center">
+            <div className="bg-green-50 p-6 rounded-full">
+              <CheckCircle2 className="w-20 h-20 text-green-600" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-serif font-bold text-primary">Registration Submitted Successfully!</h2>
+          <p className="text-gray-600 text-lg leading-relaxed">
+            Thank you for registering with Legal Help Kolkata.<br/>
+            Your application has been received and is currently under review.<br/>
+            Your profile will appear in the Advocate Directory once verified.
+          </p>
+          <Button onClick={handleCloseSuccess} className="mt-8 w-full h-14 rounded-2xl text-lg bg-primary hover:bg-primary/90 text-white font-bold tracking-wide">
+            Close
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!showRegistrationForm) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 min-h-[80vh] flex flex-col justify-center">
         <Card className="border-none shadow-2xl rounded-[2rem] overflow-hidden">
           <div className="bg-primary p-10 text-center text-white">
             <ShieldCheck className="w-16 h-16 mx-auto mb-4 text-gold" />
             <CardTitle className="text-3xl font-serif mb-2">Advocate Portal</CardTitle>
-            <CardDescription className="text-primary-foreground/80 italic">Sign in to verify your credentials</CardDescription>
+            <CardDescription className="text-primary-foreground/80 italic">Select a registration method</CardDescription>
           </div>
           <CardContent className="p-8 space-y-6 text-center">
-            <p className="text-sm text-gray-600 leading-relaxed">
-              To list your practice in the Legal Help Kolkata directory and respond to civic legal queries, you must authenticate your identity.
+            <p className="text-sm text-gray-600 leading-relaxed mb-2">
+              Join our directory of verified practitioners providing pro-bono informational guidance.
             </p>
             <Button 
               onClick={handleGoogleLogin} 
@@ -155,46 +227,29 @@ export default function AdvocateRegistration() {
               ) : (
                 <>
                   <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
-                  Sign in with Google
+                  Register / Sign in with Google
                 </>
               )}
             </Button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase tracking-widest">OR</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <Button 
+              onClick={handleDirectRegistration}
+              variant="ghost"
+              className="w-full h-14 rounded-2xl text-primary hover:bg-primary/5 underline hover:text-primary font-semibold"
+            >
+              Prefer not to sign in? Fill the form directly
+            </Button>
+
           </CardContent>
         </Card>
       </div>
     );
-  }
-
-  if (isSuccess) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-6 bg-white p-10 rounded-[3rem] shadow-xl border border-gray-100"
-        >
-          <div className="flex justify-center">
-            <div className="bg-green-50 p-6 rounded-full">
-              <CheckCircle2 className="w-20 h-20 text-green-600" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-serif font-bold text-primary">Registration Submitted</h2>
-          <p className="text-gray-600 text-lg leading-relaxed">
-            Your registration has been submitted successfully! Your profile will appear in the directory after verification by Admin.
-          </p>
-          <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 text-sm text-blue-800">
-            You will be notified once your credentials (Enrollment No. & Bar Council details) have been verified.
-          </div>
-          <Button onClick={() => navigate('/directory')} variant="outline" className="mt-8 h-14 px-8 rounded-2xl border-primary text-primary hover:bg-primary/5 uppercase tracking-widest font-black text-xs">
-            Return to Directory
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (isAdmin && user && user.email) {
-    return <AdminPortal userEmail={user.email} />;
   }
 
   return (
@@ -203,9 +258,11 @@ export default function AdvocateRegistration() {
         <Button variant="ghost" onClick={() => navigate('/directory')} className="hover:bg-transparent text-gray-500 hover:text-primary">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Directory
         </Button>
-        <Button variant="outline" onClick={() => signOut(auth)} className="text-xs">
-          Sign Out ({user.email})
-        </Button>
+        {registrationMethod === 'google' && googleUser && (
+          <Button variant="outline" onClick={() => signOut(auth)} className="text-xs">
+            Sign Out ({googleUser.email})
+          </Button>
+        )}
       </div>
 
       <Card className="border-0 shadow-2xl rounded-[2rem] overflow-hidden bg-white">
@@ -237,11 +294,17 @@ export default function AdvocateRegistration() {
                     id="email"
                     type="email"
                     required
+                    readOnly={registrationMethod === 'google'}
                     placeholder="advocate@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="h-12 bg-gray-50 border-gray-200"
+                    className={`h-12 border-gray-200 ${registrationMethod === 'google' ? 'bg-gray-100 text-gray-500' : 'bg-gray-50'}`}
                   />
+                  {registrationMethod === 'direct' && (
+                    <p className="text-xs text-blue-600 mt-1 italic">
+                      Please provide your valid email address.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="phone">Phone Number (10-digit)</Label>
