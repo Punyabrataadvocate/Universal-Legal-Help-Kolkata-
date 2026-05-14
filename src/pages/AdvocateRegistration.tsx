@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { signInWithPopup, GoogleAuthProvider, signOut, signInWithRedirect } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { LEGAL_CATEGORIES } from '@/constants/legal';
 import { ADMIN_EMAILS } from '@/constants/admins';
@@ -86,7 +86,11 @@ export default function AdvocateRegistration() {
     } catch (error: any) {
       console.error("Login failed", error);
       if (error.code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, new GoogleAuthProvider());
+        alert("Sign-in popup was blocked by your browser. Please allow popups for this site, or open it in a new tab to complete login.");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.log("Sign-in popup closed by user.");
+      } else {
+        alert("Failed to sign in. Please try again. " + (error.message || ''));
       }
     } finally {
       setIsLoggingIn(false);

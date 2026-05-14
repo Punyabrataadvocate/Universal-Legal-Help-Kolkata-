@@ -94,6 +94,15 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
      await publishToPublicAdvocates({ ...advocate, status: 'approved' });
   };
 
+  const handleDeleteAdvocateRegistration = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'advocate_registrations', id));
+    } catch (e) {
+      console.error("Error deleting advocate registration:", e);
+      alert(`Failed to delete advocate registration. Error: ${e instanceof Error ? e.message : 'Unknown'}`);
+    }
+  };
+
   const handleDeleteQuery = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'user_queries', id));
@@ -272,6 +281,9 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t">
+                    <Button onClick={() => handleDeleteAdvocateRegistration(adv.id)} variant="ghost" className="text-red-500 hover:bg-red-50 hover:text-red-600 mr-auto">
+                      <Trash2 className="w-4 h-4 mr-2" /> Delete
+                    </Button>
                     {adv.status !== 'approved' && (
                       <Button onClick={() => handleApproveAdvocate(adv)} className="bg-green-600 hover:bg-green-700 text-white shadow-md">
                         <CheckCircle className="w-4 h-4 mr-2" /> Approve
