@@ -241,9 +241,9 @@ export default function AdvocateRegistration() {
             <Button 
               onClick={handleDirectRegistration}
               variant="ghost"
-              className="w-full h-14 rounded-2xl text-primary hover:bg-primary/5 underline hover:text-primary font-semibold"
+              className="w-full h-auto py-4 rounded-2xl text-primary hover:bg-primary/5 underline hover:text-primary font-bold text-xl leading-tight"
             >
-              Prefer not to sign in? Fill the form directly
+              Prefer not to sign in, fill the form directly
             </Button>
 
           </CardContent>
