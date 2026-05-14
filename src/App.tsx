@@ -13,6 +13,7 @@ import QueryForm from './pages/QueryForm';
 import Directory from './pages/Directory';
 
 import Blog from './pages/Blog';
+import LegalJudgments from './pages/LegalJudgments';
 
 import AdminRouteWrapper from './pages/AdminRouteWrapper';
 import AdvocateRegistration from './pages/AdvocateRegistration';
@@ -61,7 +62,7 @@ export default function App() {
   if (agreed === null) return null; // loading state
 
   return (
-    <div className="app-container relative flex flex-col h-[100dvh] md:h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="app-container relative flex flex-col h-[100dvh] overflow-hidden">
       {showSplash && <SplashScreen />}
       <div className={`flex-1 overflow-y-auto no-scrollbar pb-20 ${showSplash ? 'hidden' : 'block'}`}>
         <Routes>
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/query" element={agreed ? <QueryForm /> : <Navigate to="/disclaimer" />} />
           <Route path="/directory" element={agreed ? <Directory /> : <Navigate to="/disclaimer" />} />
           <Route path="/blog" element={agreed ? <Blog /> : <Navigate to="/disclaimer" />} />
+          <Route path="/judgments" element={agreed ? <LegalJudgments /> : <Navigate to="/disclaimer" />} />
           <Route path="/advocate-login" element={agreed ? <AdvocateRegistration /> : <Navigate to="/disclaimer" />} />
           <Route path="/admin-mlk-2024" element={agreed ? <AdminRouteWrapper /> : <Navigate to="/disclaimer" />} />
           

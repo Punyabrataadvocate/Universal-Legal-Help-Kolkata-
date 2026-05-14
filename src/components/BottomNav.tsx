@@ -1,4 +1,4 @@
-import { Landmark, Users, MessageSquareText, FileText, Info } from 'lucide-react';
+import { Landmark, Users, MessageSquareText, FileText, Scale } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function BottomNav() {
@@ -7,7 +7,7 @@ export default function BottomNav() {
   if (location.pathname === '/disclaimer') return null;
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-[480px] bg-[#1a2332]/95 backdrop-blur-xl border-t border-white/5 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+    <nav className="absolute md:fixed bottom-0 w-full bg-[#1a2332]/95 backdrop-blur-xl border-t border-white/5 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
       <div className="flex justify-between items-center h-[70px] relative px-6">
         
         {/* Left Side */}
@@ -29,8 +29,8 @@ export default function BottomNav() {
         <Link to="/blog" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/blog' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
           <FileText className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
-        <Link to="/disclaimer" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/disclaimer' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
-          <Info className="w-[22px] h-[22px] stroke-[1.5px]" />
+        <Link to="/judgments" className={`flex flex-col items-center justify-center space-y-1 w-12 transition-all ${location.pathname === '/judgments' ? 'text-gold' : 'text-white/40 hover:text-white/80'}`}>
+          <Scale className="w-[22px] h-[22px] stroke-[1.5px]" />
         </Link>
         
       </div>

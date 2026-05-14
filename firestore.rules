@@ -49,6 +49,10 @@ service cloud.firestore {
       allow read: if true;
     }
     
+    match /judgment_searches/{docId} {
+      allow create: if true;
+    }
+    
     // Catch-all
     match /{document=**} {
       allow read, write: if false;

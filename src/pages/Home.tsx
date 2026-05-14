@@ -7,6 +7,8 @@ import { motion } from 'motion/react';
 import { LEGAL_ARTICLES } from '@/constants/articles';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
+import HomeCarousel from '@/components/HomeCarousel';
+
 const CYCLIC_COLORS = [
   'bg-[#292f70] shadow-xl', // Deep Blue
   'bg-[#165134] shadow-xl', // Deep Green
@@ -96,6 +98,9 @@ export default function Home() {
         </Button>
       </section>
 
+      {/* Explore Legal Resources Carousel */}
+      <HomeCarousel />
+
       {/* Legal Literacy Block - Golden Container */}
       <section className="bg-[#c9a84c] text-[#2b1d0c] rounded-t-[2.5rem] px-5 py-12 pb-24 space-y-8 relative shadow-[0_-20px_50px_rgba(201,168,76,0.15)]">
         <div className="text-center space-y-2 px-2 mb-10">
@@ -182,8 +187,9 @@ export default function Home() {
          <h4 className="text-[10px] font-black tracking-[0.3em] uppercase text-gold mb-6 border-b border-white/10 pb-4 w-full text-left">QUICK NAVIGATION</h4>
          
          <div className="flex flex-col space-y-5 text-xs font-bold tracking-widest uppercase text-white/50 w-full mb-10 text-left">
+           <Link to="/judgments" className="hover:text-white transition-colors text-gold">Legal Judgments</Link>
            <Link to="/directory" className="hover:text-white transition-colors">Advocate Directory</Link>
-           <Link to="/blog" className="hover:text-white transition-colors">Legal Resources</Link>
+           <Link to="/blog" className="hover:text-white transition-colors">Legal Resources QA</Link>
            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
            <Link to="/disclaimer" className="hover:text-white transition-colors">BCI Disclaimer</Link>
