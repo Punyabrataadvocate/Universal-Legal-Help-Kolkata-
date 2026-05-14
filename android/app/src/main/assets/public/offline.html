@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Legal Help Kolkata</title>
+    <style>
+        body {
+            background-color: #0d1b2a;
+            color: #c9a84c;
+            font-family: 'Josefin Sans', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.1rem;
+            max-width: 80%;
+        }
+        .retry-btn {
+            margin-top: 2rem;
+            background-color: #c9a84c;
+            color: #0d1b2a;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Josefin+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>You're Offline</h1>
+    <p>It seems you don't have an active internet connection. Please check your network and try again.</p>
+    <button class="retry-btn" onclick="window.location.reload()">Retry</button>
+</body>
+</html>

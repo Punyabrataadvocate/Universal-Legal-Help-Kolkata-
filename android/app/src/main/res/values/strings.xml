@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Legal Help Kolkata</string>
+    <string name="title_activity_main">Legal Help Kolkata</string>
+    <string name="package_name">com.legalhelpkolkata.app</string>
+    <string name="custom_url_scheme">com.legalhelpkolkata.app</string>
+</resources>
