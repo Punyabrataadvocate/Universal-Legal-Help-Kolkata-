@@ -411,19 +411,14 @@ export default function AdvocateRegistration() {
                     <p className="text-xs text-red-600"><strong>Detail:</strong> {authError.message}</p>
                     {authError.code === 'auth/unauthorized-domain' && (
                       <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-gray-700 space-y-1">
-                        <p className="font-semibold text-red-800">Why Google Popup Fails:</p>
+                        <p className="font-semibold text-red-800">Domain Verification Needed:</p>
                         <p className="leading-relaxed text-[11px] text-gray-600">
-                          Google Popups are blocked on unauthorized domains like <code className="bg-red-100 px-1 rounded font-mono text-red-800">{window.location.hostname}</code>.
+                          Google Login is currently not configured for <code className="bg-red-100 px-1 rounded font-mono text-red-800">{window.location.hostname}</code>.
                         </p>
-                        <p className="font-semibold text-red-800 mt-2">Recommended Secure Fallback:</p>
-                        <p className="leading-relaxed text-[11px]">
-                          Please use the <strong>secure Email/Password sign-in wrapper</strong> directly.
+                        <p className="font-semibold text-red-800 mt-2">Recommended Option:</p>
+                        <p className="leading-relaxed text-[11px] text-gray-600">
+                          Please click <strong>"Prefer not to sign in, fill the form directly"</strong> below to register without needing a Google Account.
                         </p>
-                        <ol className="list-decimal pl-4 space-y-1 mt-1 leading-normal text-[11px] text-gray-600 font-sans">
-                          <li>Click on the URL bar and navigate to <code className="bg-gray-150 px-1 rounded font-mono">/admin-mlk-2024</code> directly.</li>
-                          <li>If you are not yet registered, click the <strong>Setup / Provision</strong> tab.</li>
-                          <li>Select your whitelisted email, create a password, click <strong>Initialize</strong>, and then sign in.</li>
-                        </ol>
                       </div>
                     )}
                     {authError.code === 'auth/popup-blocked' && (
