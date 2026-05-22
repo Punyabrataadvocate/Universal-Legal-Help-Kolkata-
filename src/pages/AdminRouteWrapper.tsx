@@ -229,8 +229,8 @@ export default function AdminRouteWrapper() {
               </div>
             )}
 
-            {/* AUTH FORMS (ONLY CHOSEN IF USER TYPE OR CLEAR SESSION LOGGED IN) */}
-            {(!user || isAuthorized) && (
+            {/* AUTH FORMS (ONLY CHOSEN IF NOT AUTHORIZED) */}
+            {!isAuthorized && (
               <>
                 {/* TABS */}
                 <div className="grid grid-cols-2 gap-1 p-1 bg-[#0d1b2a] rounded-xl border border-gray-800">
@@ -250,25 +250,36 @@ export default function AdminRouteWrapper() {
 
                 <form onSubmit={handleEmailAuthSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="admin-select" className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Select Admin Account</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                      <select
-                        id="admin-select"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full h-12 pl-11 pr-4 bg-[#0d1b2a] border border-gray-800 rounded-xl text-sm focus:outline-none focus:border-[#c9a84c] text-white font-mono appearance-none"
-                      >
-                        <option value="" disabled className="text-gray-600">-- Choose Whitelisted Email --</option>
+                    <Label htmlFor="admin-email" className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans">Admin Email Address</Label>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <Input 
+                          id="admin-email"
+                          type="email" 
+                          required
+                          placeholder="admin@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-12 pl-11 bg-[#0d1b2a] border-gray-800 rounded-xl focus:border-[#c9a84c] text-sm text-white"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        <span className="text-[9px] text-gray-500 self-center uppercase tracking-wider mr-1">Quick Select:</span>
                         {ADMIN_EMAILS.map(e => (
-                          <option key={e} value={e} className="text-white py-2 bg-[#0d1b2a]">{e}</option>
+                          <button
+                            key={e}
+                            type="button"
+                            onClick={() => setEmail(e)}
+                            className={`text-[10px] font-mono px-2 py-1 rounded-lg transition-all border ${
+                              email.trim().toLowerCase() === e.toLowerCase()
+                                ? 'bg-[#c9a84c]/20 border-[#c9a84c] text-[#c9a84c] shadow-sm'
+                                : 'bg-slate-900/60 border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+                            }`}
+                          >
+                            {e}
+                          </button>
                         ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                        <svg className="fill-current h-4 w-4" viewBox="0 0 20 20">
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                        </svg>
                       </div>
                     </div>
                   </div>
