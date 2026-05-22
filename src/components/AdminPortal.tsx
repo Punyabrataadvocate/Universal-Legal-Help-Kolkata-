@@ -18,37 +18,55 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
   const [publicAdvocates, setPublicAdvocates] = useState<any[]>([]);
   const [blogPosts, setBlogPosts] = useState<any[]>([]);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
+  const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. Queries
     const qQueries = query(collection(db, 'user_queries'), orderBy('createdAt', 'desc'));
     const unsubQueries = onSnapshot(qQueries, snap => {
       setQueries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("Failed to load user queries:", err);
+      setDbError(err.message || String(err));
     });
 
     // 2. Advocate Registrations
     const qAdv = query(collection(db, 'advocate_registrations'), orderBy('createdAt', 'desc'));
     const unsubAdv = onSnapshot(qAdv, snap => {
       setAdvocates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("Failed to load advocate registrations:", err);
+      setDbError(err.message || String(err));
     });
 
     // Public Directory
     const qPubAdv = query(collection(db, 'public_advocates'));
     const unsubPubAdv = onSnapshot(qPubAdv, snap => {
       setPublicAdvocates(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("Failed to load public directory:", err);
+      setDbError(err.message || String(err));
     });
 
     // 3. Blog Questions (Let's assume "blog_posts" collection has type="question" and "answer")
     const qBlog = query(collection(db, 'blog_posts'), orderBy('createdAt', 'desc'));
     const unsubBlog = onSnapshot(qBlog, async snap => {
-      const posts = snap.docs.map(d => ({ id: d.id, ...d.data(), answers: [] as any[] }))
-        .filter((post: any) => post.type === 'question');
+      try {
+        const posts = snap.docs.map(d => ({ id: d.id, ...d.data(), answers: [] as any[] }))
+          .filter((post: any) => post.type === 'question');
 
-      for (const q of posts) {
-        const ansSnap = await getDocs(collection(db, `blog_posts/${q.id}/answers`));
-        q.answers = ansSnap.docs.map(a => ({ id: a.id, ...a.data() }));
+        for (const q of posts) {
+          const ansSnap = await getDocs(collection(db, `blog_posts/${q.id}/answers`));
+          q.answers = ansSnap.docs.map(a => ({ id: a.id, ...a.data() }));
+        }
+        setBlogPosts(posts);
+      } catch (e: any) {
+        console.error("Failed to fetch answer subcollections:", e);
+        setDbError(e.message || String(e));
       }
-      setBlogPosts(posts);
+    }, err => {
+      console.error("Failed to load blog posts:", err);
+      setDbError(err.message || String(err));
     });
 
     return () => {
@@ -213,8 +231,40 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
 
         <CardContent className="p-0">
           
-          {/* QUERIES TAB */}
-          {activeTab === 'queries' && (
+          {dbError ? (
+            <div className="p-8 max-w-2xl mx-auto space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-3xl p-6 text-left space-y-3">
+                <p className="text-base font-bold text-red-800 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-red-600 animate-pulse" /> Database Query Error
+                </p>
+                <p className="text-xs text-gray-700 leading-normal">
+                  Your administrator account <strong className="text-gray-900">{userEmail}</strong> signed in successfully. However, the application encountered an error while trying to fetch data from Firestore:
+                </p>
+                <div className="bg-white border border-red-100 p-4 rounded-xl font-mono text-xs text-red-700 overflow-auto max-h-36 shadow-inner leading-relaxed">
+                  {dbError}
+                </div>
+                <div className="text-xs text-gray-600 space-y-2 pt-2 border-t border-red-100">
+                  <p className="font-semibold text-gray-700">Why does this occur?</p>
+                  <p className="leading-relaxed">
+                    This usually happens for one of three reasons:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 mt-1 font-sans">
+                    <li>Your Vercel deployment is pointing to our AI Studio database sandboxed project which has strict permission limits.</li>
+                    <li>The Firestore Security Rules have not been deployed to your active Firebase project yet.</li>
+                    <li>The <strong className="text-gray-900">mukherjipb@gmail.com</strong> email hasn't been authorized with administrator privileges in your database's Security Rules or admin collections.</li>
+                  </ul>
+                  <p className="font-semibold text-gray-700 mt-2">Recommended Troubleshooting Solutions:</p>
+                  <ol className="list-decimal pl-4 space-y-1.5 mt-1 leading-normal font-sans">
+                    <li>Type <code className="bg-gray-100 px-1 rounded font-mono">deploy_firebase</code> on AI Studio to deploy security rules. Alternatively, copy-paste your <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-[11px]">firestore.rules</code> file into your project console online under Firestore &rarr; Rules tab.</li>
+                    <li>Ensure you configure all Firebase environment variables in your <strong>Vercel Project &rarr; Settings &rarr; Environment Variables</strong> so Vercel can connect to your personal Firebase project instead of falling back to AI Studio's credentials.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* QUERIES TAB */}
+              {activeTab === 'queries' && (
             <div className="p-6 space-y-4">
               {queries.length === 0 ? <p className="text-gray-500 text-center py-10">No user queries found.</p> : null}
               {queries.map(q => (
@@ -378,6 +428,8 @@ export default function AdminPortal({ userEmail }: { userEmail: string }) {
                   </div>
                 ))}
              </div>
+          )}
+            </>
           )}
           
         </CardContent>

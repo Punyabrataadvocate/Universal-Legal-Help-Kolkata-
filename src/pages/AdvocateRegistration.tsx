@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { Loader2, ShieldCheck, ArrowLeft, CheckCircle2, Shield } from 'lucide-react';
+import { signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { LEGAL_CATEGORIES } from '@/constants/legal';
 import { ADMIN_EMAILS } from '@/constants/admins';
@@ -26,6 +26,11 @@ export default function AdvocateRegistration() {
   const [registrationMethod, setRegistrationMethod] = useState<'google' | 'direct' | null>(null);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [googleUser, setGoogleUser] = useState<any>(null);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isEmailLoggingIn, setIsEmailLoggingIn] = useState(false);
+  const [authError, setAuthError] = useState<{ code: string; message: string } | null>(null);
+  const [showAdminEmailAuth, setShowAdminEmailAuth] = useState(false);
 
   useEffect(() => {
     if (user && user.email && !showRegistrationForm && registrationMethod !== 'direct') {
@@ -63,6 +68,7 @@ export default function AdvocateRegistration() {
   const handleGoogleLogin = async () => {
     try {
       setIsLoggingIn(true);
+      setAuthError(null);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: 'select_account'
@@ -85,15 +91,49 @@ export default function AdvocateRegistration() {
       }
     } catch (error: any) {
       console.error("Login failed", error);
-      if (error.code === 'auth/popup-blocked') {
-        alert("Sign-in popup was blocked by your browser. Please allow popups for this site, or open it in a new tab to complete login.");
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        console.log("Sign-in popup closed by user.");
-      } else {
-        alert("Failed to sign in. Please try again. " + (error.message || ''));
-      }
+      setAuthError({
+        code: error.code || 'unknown',
+        message: error.message || 'An unexpected error occurred during Google sign in.'
+      });
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminEmail.trim() || !adminPassword.trim()) {
+      setAuthError({ code: 'missing-fields', message: 'Please enter both email and password.' });
+      return;
+    }
+    try {
+      setIsEmailLoggingIn(true);
+      setAuthError(null);
+      const result = await signInWithEmailAndPassword(auth, adminEmail.trim(), adminPassword);
+      const userEmail = result.user.email?.toLowerCase().trim() || "";
+      
+      const adminEmailsSet = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
+      if (adminEmailsSet.includes(userEmail)) {
+        navigate('/admin-mlk-2024');
+      } else {
+        setAuthError({ 
+          code: 'not-authorized', 
+          message: 'This email is not registered as an administrator.' 
+        });
+        await signOut(auth);
+      }
+    } catch (error: any) {
+      console.error("Email login failed", error);
+      let friendlyMessage = error.message || 'Verification failed.';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        friendlyMessage = 'Invalid email or password. Please verify your credentials or ensure the user is added to your Firebase project.';
+      }
+      setAuthError({
+        code: error.code || 'sign-in-failed',
+        message: friendlyMessage
+      });
+    } finally {
+      setIsEmailLoggingIn(false);
     }
   };
 
@@ -236,6 +276,35 @@ export default function AdvocateRegistration() {
               )}
             </Button>
 
+            {authError && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left space-y-2 mt-4">
+                <p className="text-sm font-bold text-red-800">Authentication Error</p>
+                <p className="text-xs text-red-700"><strong>Code:</strong> {authError.code}</p>
+                <p className="text-xs text-red-600"><strong>Detail:</strong> {authError.message}</p>
+                {authError.code === 'auth/unauthorized-domain' && (
+                  <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-gray-700 space-y-1">
+                    <p className="font-semibold text-red-800">Solution:</p>
+                    <p className="leading-relaxed">
+                      This domain (<code className="bg-red-100 px-1 rounded font-mono">{window.location.hostname}</code>) needs to be authorized in your Firebase project.
+                    </p>
+                    <ol className="list-decimal pl-4 space-y-1 mt-1 leading-normal">
+                      <li>Go to the <strong>Firebase Console</strong> for your project</li>
+                      <li>Navigate to <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Authorized Domains</strong></li>
+                      <li>Click <strong>Add Domain</strong> and enter <code className="bg-red-100 px-1 rounded font-mono">{window.location.hostname}</code></li>
+                    </ol>
+                    <p className="text-amber-700 mt-2 font-medium">
+                      Note: If you have already added this in your personal Firebase project, make sure you have fully configured your Vercel deployment with your own Firebase environment variables so it doesn't default to the AI Studio preview environment.
+                    </p>
+                  </div>
+                )}
+                {authError.code === 'auth/popup-blocked' && (
+                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                    <strong>Tip:</strong> Popups are blocked. Click the browser lock or popup icon in your URL bar, allow popups for this site, or open this application in a new tab/window directly.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-gray-300"></div>
               <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase tracking-widest">OR</span>
@@ -249,6 +318,95 @@ export default function AdvocateRegistration() {
             >
               Prefer not to sign in, fill the form directly
             </Button>
+
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-300 border-dashed"></div>
+            </div>
+
+            {!showAdminEmailAuth ? (
+              <Button 
+                onClick={() => {
+                  setShowAdminEmailAuth(true);
+                  setAuthError(null);
+                }}
+                variant="ghost" 
+                className="w-full text-xs text-gray-400 hover:text-primary flex items-center justify-center gap-2"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin Private Sign In (Email/Password)
+              </Button>
+            ) : (
+              <form onSubmit={handleEmailLogin} className="space-y-4 text-left border border-gray-100 p-4 rounded-2xl bg-gray-50 mt-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-black tracking-wider text-gray-500 uppercase">Admin Sign In</h4>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => {
+                      setShowAdminEmailAuth(false);
+                      setAuthError(null);
+                    }} 
+                    className="h-6 px-2 text-[10px] text-gray-400 hover:text-gray-600"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="admin-email" className="text-[10px] text-gray-400 font-bold uppercase">Email</Label>
+                  <Input 
+                    id="admin-email"
+                    type="email" 
+                    required
+                    placeholder="mukherjipb@gmail.com"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="h-10 text-xs bg-white border-gray-200 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="admin-pass" className="text-[10px] text-gray-400 font-bold uppercase">Password</Label>
+                  <Input 
+                    id="admin-pass"
+                    type="password" 
+                    required
+                    placeholder="Enter admin password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="h-10 text-xs bg-white border-gray-200 rounded-xl"
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  disabled={isEmailLoggingIn}
+                  className="w-full h-10 rounded-xl text-xs font-bold tracking-wider uppercase bg-primary text-white"
+                >
+                  {isEmailLoggingIn ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Credentials'
+                  )}
+                </Button>
+                
+                <div className="text-[10px] text-gray-400 leading-normal bg-white border border-gray-100 p-3 rounded-xl mt-2 font-medium">
+                  <p className="font-bold text-gray-600 mb-1 flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-gold" /> Setting Up Private Login:
+                  </p>
+                  <ol className="list-decimal pl-3.5 space-y-1 mt-1 font-sans">
+                    <li>Go to your <strong>Firebase Console &rarr; Authentication</strong></li>
+                    <li>Ensure <strong>Email/Password</strong> provider is enabled in Sign-in methods</li>
+                    <li>On the <strong>Users</strong> tab, click <strong>Add User</strong></li>
+                    <li>Enter <code className="bg-gray-100/80 px-1 font-mono">mukherjipb@gmail.com</code> and a secure password</li>
+                  </ol>
+                  <p className="mt-2 text-blue-600 font-semibold">
+                    This bypasses Google domain-naming restrictions on any host!
+                  </p>
+                </div>
+              </form>
+            )}
 
           </CardContent>
         </Card>
