@@ -92,9 +92,17 @@ export default function AdvocateRegistration() {
       }
     } catch (error: any) {
       console.error("Login failed", error);
+      let friendlyMessage = 'An unexpected error occurred during Google sign in.';
+      if (error.code === 'auth/popup-closed-by-user') {
+        friendlyMessage = 'The Google sign-in window was closed before finishing. Please try again.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'Google sign-on provider is currently disabled.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        friendlyMessage = 'This website domain is not currently authorized for Google sign-on. Please fill out the registration form directly below.';
+      }
       setAuthError({
         code: error.code || 'unknown',
-        message: error.message || 'An unexpected error occurred during Google sign in.'
+        message: friendlyMessage
       });
     } finally {
       setIsLoggingIn(false);
@@ -119,17 +127,19 @@ export default function AdvocateRegistration() {
       } else {
         setAuthError({ 
           code: 'not-authorized', 
-          message: 'This email is not registered as an administrator.' 
+          message: 'Access Denied.' 
         });
         await signOut(auth);
       }
     } catch (error: any) {
       console.error("Email login failed", error);
-      let friendlyMessage = error.message || 'Verification failed.';
+      let friendlyMessage = 'Verification failed.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        friendlyMessage = 'Invalid email or password. Please verify your credentials or ensure the user is added to your Firebase project.';
+        friendlyMessage = 'Invalid email or password.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = 'Email/Password sign-on provider is currently disabled in your Firebase Console settings.';
+        friendlyMessage = 'Email/Password authentication is disabled.';
+      } else if (error.message) {
+        friendlyMessage = error.message;
       }
       setAuthError({
         code: error.code || 'sign-in-failed',
@@ -318,53 +328,7 @@ export default function AdvocateRegistration() {
                   />
                 </div>
 
-                {authError && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-left">
-                    <p className="text-xs font-bold text-red-800">Authentication Failure</p>
-                    <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">{authError.message}</p>
-                    {authError.code === 'auth/operation-not-allowed' && (
-                      <div className="mt-2.5 pt-2 border-t border-red-100 text-[10px] space-y-2 text-gray-700 font-sans">
-                        <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg space-y-1 text-amber-800">
-                          <p className="font-bold flex items-center gap-1">🔍 Live Connection Diagnostics:</p>
-                          <p>
-                            Your app is currently connecting to Firebase Project: <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-amber-900 select-all font-semibold">{auth.app.options.projectId || "unknown"}</code>
-                          </p>
-                          {(auth.app.options.projectId === "project-ea3971ef-4fe4-43cd-8ef" || auth.app.options.projectId?.startsWith("project-")) ? (
-                            <p className="text-gray-600 mt-1 leading-normal font-sans">
-                              <strong>⚠️ CONFIGURATION MISMATCH:</strong> This is the temporary AI Studio sandbox project owned by Google. Your deployed Vercel site has not loaded your personal credentials yet, so it defaults to the sandbox database where email sign-on is disabled.
-                            </p>
-                          ) : (
-                            <p className="text-gray-600 mt-1 leading-normal font-sans">
-                              <strong>✅ Pointing to custom project:</strong> Your app is pointing to your custom project ID. If you already enabled Email/Password there, please double check in your Firebase Console that it saved correctly.
-                            </p>
-                          )}
-                        </div>
 
-                        <p className="font-bold text-red-800 uppercase tracking-wide">STEP 1: Add your credentials to your Vercel Dashboard (Required)</p>
-                        <p className="leading-snug text-gray-600">
-                          To connect the Vercel site to your own project rather than the sandbox, add these in your Vercel Project settings:
-                        </p>
-                        <ul className="list-disc pl-4 space-y-0.5 font-mono text-gray-600 text-[9px]">
-                          <li>FIREBASE_PROJECT_ID</li>
-                          <li>FIREBASE_API_KEY</li>
-                          <li>FIREBASE_APP_ID</li>
-                          <li>FIREBASE_AUTH_DOMAIN</li>
-                        </ul>
-                        <p className="leading-snug text-gray-600">
-                          After saving them, go to the <strong>Deployments</strong> tab in Vercel, and click <strong>Redeploy</strong> to bundle them!
-                        </p>
-
-                        <p className="font-bold text-red-800 uppercase tracking-wide pt-1">STEP 2: Verify in your Firebase Console</p>
-                        <ol className="list-decimal pl-4 space-y-1 leading-normal text-gray-600">
-                          <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold">Firebase Console &rarr;</a></li>
-                          <li>Open your active project.</li>
-                          <li>Navigate to <strong>Authentication &rarr; Sign-in method</strong>.</li>
-                          <li>Enable <strong>Email/Password</strong> and click Save.</li>
-                        </ol>
-                      </div>
-                    )}
-                  </div>
-                )}
                 
                 <Button 
                   type="submit" 
@@ -403,31 +367,6 @@ export default function AdvocateRegistration() {
                     </>
                   )}
                 </Button>
-
-                {authError && (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left space-y-2 mt-4">
-                    <p className="text-sm font-bold text-red-800">Authentication Error</p>
-                    <p className="text-xs text-red-700"><strong>Code:</strong> {authError.code}</p>
-                    <p className="text-xs text-red-600"><strong>Detail:</strong> {authError.message}</p>
-                    {authError.code === 'auth/unauthorized-domain' && (
-                      <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-gray-700 space-y-1">
-                        <p className="font-semibold text-red-800">Domain Verification Needed:</p>
-                        <p className="leading-relaxed text-[11px] text-gray-600">
-                          Google Login is currently not configured for <code className="bg-red-100 px-1 rounded font-mono text-red-800">{window.location.hostname}</code>.
-                        </p>
-                        <p className="font-semibold text-red-800 mt-2">Recommended Option:</p>
-                        <p className="leading-relaxed text-[11px] text-gray-600">
-                          Please click <strong>"Prefer not to sign in, fill the form directly"</strong> below to register without needing a Google Account.
-                        </p>
-                      </div>
-                    )}
-                    {authError.code === 'auth/popup-blocked' && (
-                      <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-                        <strong>Tip:</strong> Popups are blocked. Click the browser lock or popup icon in your URL bar, allow popups for this site, or open this application in a new tab/window directly.
-                      </p>
-                    )}
-                  </div>
-                )}
 
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-gray-300"></div>

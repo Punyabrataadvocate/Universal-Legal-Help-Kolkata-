@@ -80,9 +80,17 @@ export default function AdminRouteWrapper() {
       }
     } catch (error: any) {
       console.error("Google Admin sign in failed", error);
+      let friendlyMessage = 'An unexpected error occurred during Google authentication.';
+      if (error.code === 'auth/popup-closed-by-user') {
+        friendlyMessage = 'The Google sign-in window was closed before finishing. Please click "Sign In with Google" again to retry.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'Google Sign-on provider is currently disabled in your Firebase settings.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        friendlyMessage = 'This domain is not authorized for Google Sign-in. Please enable it in your Firebase console or use option 1 ("Admin Sign In") instead.';
+      }
       setAuthError({
         code: error.code || 'unknown',
-        message: error.message || 'An unexpected error occurred during Google authentication.'
+        message: friendlyMessage
       });
     } finally {
       setIsGoogleLoggingIn(false);
@@ -120,14 +128,20 @@ export default function AdminRouteWrapper() {
       }
     } catch (error: any) {
       console.error("Email auth failed", error);
-      let friendlyMessage = error.message;
+      let friendlyMessage = 'An unexpected error occurred during email auth.';
 
-      if (authMode === 'register' && error.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'This admin account is already registered. Please sign in instead using the login option.';
+      if (error.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'This admin email is already registered and initialized. Please sign in instead using Option 1 ("Admin Sign In").';
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        friendlyMessage = 'Invalid email or password. If you have not created your account password yet, select "Register & Initialize Admin Account" below.';
+        friendlyMessage = 'Invalid email or password. If you have not initialized this workspace password yet, select Option 2 ("Setup / Provision") to configure it.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        friendlyMessage = 'Email/Password sign-on provider is currently disabled in your Firebase Console settings.';
+        friendlyMessage = 'The Email/Password sign-on provider is currently disabled in your Firebase project. Please enable it in the Firebase Console.';
+      } else if (error.code === 'auth/weak-password') {
+        friendlyMessage = 'The password is too weak. Please choose a password that is at least 6 characters long.';
+      } else if (error.code === 'auth/invalid-email') {
+        friendlyMessage = 'The selected email address format is invalid.';
+      } else if (error.message) {
+        friendlyMessage = error.message;
       }
 
       setAuthError({
