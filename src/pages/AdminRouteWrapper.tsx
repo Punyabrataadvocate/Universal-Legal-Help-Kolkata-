@@ -126,6 +126,8 @@ export default function AdminRouteWrapper() {
         friendlyMessage = 'This admin account is already registered. Please sign in instead using the login option.';
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. If you have not created your account password yet, select "Register & Initialize Admin Account" below.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'Email/Password sign-on provider is currently disabled in your Firebase Console settings.';
       }
 
       setAuthError({
@@ -287,6 +289,23 @@ export default function AdminRouteWrapper() {
                             <p className="font-bold text-[#c9a84c]">Authorized Domain Constraint Detected</p>
                             <p className="text-[10px]">
                               Google popups are blocked on this preview domain. Feel free to use the <strong>Email/Password Private Workspace Sign-In</strong> instead, which is unaffected by domain restriction rules!
+                            </p>
+                          </div>
+                        )}
+
+                        {authError.code === 'auth/operation-not-allowed' && (
+                          <div className="pt-2.5 border-t border-red-500/20 space-y-2 text-gray-300 font-sans text-left">
+                            <p className="font-bold text-[#c9a84c] uppercase tracking-wider text-[10px]">How to Enable Email/Password Sign-In:</p>
+                            <ol className="list-decimal pl-4 space-y-1.5 text-[10px] leading-relaxed text-gray-300">
+                              <li>Open the <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold flex-inline items-center gap-1">Firebase Console &rarr;</a></li>
+                              <li>Select your active Firebase Project.</li>
+                              <li>Go to <strong>Build (or Build menu) &rarr; Authentication</strong>.</li>
+                              <li>Select the <strong>Sign-in method</strong> tab at the top.</li>
+                              <li>Click <strong>Add new provider</strong> (or click Edit if listed) and click <strong>Email/Password</strong>.</li>
+                              <li>Turn on the toggle next to <strong>Email/Password</strong> (keep "Email link" disabled) and click <strong>Save</strong>.</li>
+                            </ol>
+                            <p className="text-[9px] text-amber-300/85 italic leading-normal pt-1">
+                              * After saving, return to this page and click verify to sign in successfully!
                             </p>
                           </div>
                         )}

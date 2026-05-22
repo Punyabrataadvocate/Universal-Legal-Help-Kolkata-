@@ -31,6 +31,7 @@ export default function AdvocateRegistration() {
   const [isEmailLoggingIn, setIsEmailLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<{ code: string; message: string } | null>(null);
   const [showAdminEmailAuth, setShowAdminEmailAuth] = useState(false);
+  const [headerClickCount, setHeaderClickCount] = useState(0);
 
   useEffect(() => {
     if (user && user.email && !showRegistrationForm && registrationMethod !== 'direct') {
@@ -127,6 +128,8 @@ export default function AdvocateRegistration() {
       let friendlyMessage = error.message || 'Verification failed.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. Please verify your credentials or ensure the user is added to your Firebase project.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        friendlyMessage = 'Email/Password sign-on provider is currently disabled in your Firebase Console settings.';
       }
       setAuthError({
         code: error.code || 'sign-in-failed',
@@ -249,76 +252,177 @@ export default function AdvocateRegistration() {
     return (
       <div className="max-w-md mx-auto px-4 py-20 min-h-[80vh] flex flex-col justify-center">
         <Card className="border-none shadow-2xl rounded-[2rem] overflow-hidden">
-          <div className="bg-primary p-10 text-center text-white">
+          <div 
+            onClick={() => {
+              setHeaderClickCount(prev => {
+                const nextCount = prev + 1;
+                if (nextCount >= 5) {
+                  setShowAdminEmailAuth(true);
+                  setAuthError(null);
+                  return 0;
+                }
+                return nextCount;
+              });
+            }}
+            className="bg-primary p-10 text-center text-white cursor-pointer select-none"
+            title="Advocate Portal"
+          >
             <ShieldCheck className="w-16 h-16 mx-auto mb-4 text-gold" />
             <CardTitle className="text-3xl font-serif mb-2">Advocate Portal</CardTitle>
             <CardDescription className="text-primary-foreground/80 italic">Select a registration method</CardDescription>
           </div>
           <CardContent className="p-8 space-y-6 text-center">
-            <p className="text-sm text-gray-600 leading-relaxed mb-2">
-              Join our directory of verified practitioners providing pro-bono informational guidance.
-            </p>
-            <Button 
-              onClick={handleGoogleLogin} 
-              disabled={isLoggingIn}
-              className="w-full h-14 rounded-2xl bg-white text-gray-800 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-bold tracking-wide shadow-sm"
-            >
-              {isLoggingIn ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-3 animate-spin" />
-                  Connecting to Google...
-                </>
-              ) : (
-                <>
-                  <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
-                  Register / Sign in with Google
-                </>
-              )}
-            </Button>
+            {showAdminEmailAuth ? (
+              <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-xs font-black tracking-wider text-primary uppercase flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5 text-[#D4AF37]" /> Admin private login
+                  </h4>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => {
+                      setShowAdminEmailAuth(false);
+                      setAuthError(null);
+                      setHeaderClickCount(0);
+                    }} 
+                    className="h-8 px-2 text-xs text-gray-400 hover:text-gray-600 rounded-lg"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                
+                <div className="space-y-1">
+                  <Label htmlFor="admin-email" className="text-[10px] text-gray-400 font-bold uppercase">Whitelisted Email</Label>
+                  <Input 
+                    id="admin-email"
+                    type="email" 
+                    required
+                    placeholder="mukherjipb@gmail.com"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="h-11 text-xs bg-white border-gray-200 rounded-xl"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <Label htmlFor="admin-pass" className="text-[10px] text-gray-400 font-bold uppercase">Password</Label>
+                  <Input 
+                    id="admin-pass"
+                    type="password" 
+                    required
+                    placeholder="Enter admin password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="h-11 text-xs bg-white border-gray-200 rounded-xl"
+                  />
+                </div>
 
-            {authError && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left space-y-2 mt-4">
-                <p className="text-sm font-bold text-red-800">Authentication Error</p>
-                <p className="text-xs text-red-700"><strong>Code:</strong> {authError.code}</p>
-                <p className="text-xs text-red-600"><strong>Detail:</strong> {authError.message}</p>
-                {authError.code === 'auth/unauthorized-domain' && (
-                  <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-gray-700 space-y-1">
-                    <p className="font-semibold text-red-800">Solution:</p>
-                    <p className="leading-relaxed">
-                      This domain (<code className="bg-red-100 px-1 rounded font-mono">{window.location.hostname}</code>) needs to be authorized in your Firebase project.
-                    </p>
-                    <ol className="list-decimal pl-4 space-y-1 mt-1 leading-normal">
-                      <li>Go to the <strong>Firebase Console</strong> for your project</li>
-                      <li>Navigate to <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Authorized Domains</strong></li>
-                      <li>Click <strong>Add Domain</strong> and enter <code className="bg-red-100 px-1 rounded font-mono">{window.location.hostname}</code></li>
-                    </ol>
-                    <p className="text-amber-700 mt-2 font-medium">
-                      Note: If you have already added this in your personal Firebase project, make sure you have fully configured your Vercel deployment with your own Firebase environment variables so it doesn't default to the AI Studio preview environment.
-                    </p>
+                {authError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-left">
+                    <p className="text-xs font-bold text-red-800">Authentication Failure</p>
+                    <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">{authError.message}</p>
+                    {authError.code === 'auth/operation-not-allowed' && (
+                      <div className="mt-2.5 pt-2 border-t border-red-100 text-[10px] space-y-2 text-gray-700 font-sans">
+                        <p className="font-bold text-red-800 uppercase tracking-wide">Action Required in Firebase Console:</p>
+                        <p className="leading-normal">
+                          By default, Firebase requires you to manually activate the Email/Password sign-in provider.
+                        </p>
+                        <ol className="list-decimal pl-4 space-y-1 mt-0.5 leading-normal text-gray-600">
+                          <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold">Firebase Console &rarr;</a></li>
+                          <li>Open your active project.</li>
+                          <li>Navigate to <strong>Authentication &rarr; Sign-in method</strong>.</li>
+                          <li>Click <strong>Add new provider</strong> (or click Edit if listed) and select <strong>Email/Password</strong>.</li>
+                          <li>Enable the <strong>Email/Password</strong> switch and click <strong>Save</strong>.</li>
+                        </ol>
+                      </div>
+                    )}
                   </div>
                 )}
-                {authError.code === 'auth/popup-blocked' && (
-                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-                    <strong>Tip:</strong> Popups are blocked. Click the browser lock or popup icon in your URL bar, allow popups for this site, or open this application in a new tab/window directly.
-                  </p>
+                
+                <Button 
+                  type="submit" 
+                  disabled={isEmailLoggingIn}
+                  className="w-full h-11 rounded-xl text-xs font-bold tracking-wider uppercase bg-primary hover:bg-primary/95 text-white"
+                >
+                  {isEmailLoggingIn ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Credentials'
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 leading-relaxed mb-2">
+                  Join our directory of verified practitioners providing pro-bono informational guidance.
+                </p>
+                <Button 
+                  onClick={handleGoogleLogin} 
+                  disabled={isLoggingIn}
+                  className="w-full h-14 rounded-2xl bg-white text-gray-800 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 font-bold tracking-wide shadow-sm"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                      Connecting to Google...
+                    </>
+                  ) : (
+                    <>
+                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
+                      Register / Sign in with Google
+                    </>
+                  )}
+                </Button>
+
+                {authError && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left space-y-2 mt-4">
+                    <p className="text-sm font-bold text-red-800">Authentication Error</p>
+                    <p className="text-xs text-red-700"><strong>Code:</strong> {authError.code}</p>
+                    <p className="text-xs text-red-600"><strong>Detail:</strong> {authError.message}</p>
+                    {authError.code === 'auth/unauthorized-domain' && (
+                      <div className="mt-2 pt-2 border-t border-red-100 text-[11px] text-gray-700 space-y-1">
+                        <p className="font-semibold text-red-800">Why Google Popup Fails:</p>
+                        <p className="leading-relaxed text-[11px] text-gray-600">
+                          Google Popups are blocked on unauthorized domains like <code className="bg-red-100 px-1 rounded font-mono text-red-800">{window.location.hostname}</code>.
+                        </p>
+                        <p className="font-semibold text-red-800 mt-2">Recommended Secure Fallback:</p>
+                        <p className="leading-relaxed text-[11px]">
+                          Please use the <strong>secure Email/Password sign-in wrapper</strong> directly.
+                        </p>
+                        <ol className="list-decimal pl-4 space-y-1 mt-1 leading-normal text-[11px] text-gray-600 font-sans">
+                          <li>Click on the URL bar and navigate to <code className="bg-gray-150 px-1 rounded font-mono">/admin-mlk-2024</code> directly.</li>
+                          <li>If you are not yet registered, click the <strong>Setup / Provision</strong> tab.</li>
+                          <li>Select your whitelisted email, create a password, click <strong>Initialize</strong>, and then sign in.</li>
+                        </ol>
+                      </div>
+                    )}
+                    {authError.code === 'auth/popup-blocked' && (
+                      <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                        <strong>Tip:</strong> Popups are blocked. Click the browser lock or popup icon in your URL bar, allow popups for this site, or open this application in a new tab/window directly.
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-gray-300"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase tracking-widest">OR</span>
+                  <div className="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                <Button 
+                  onClick={handleDirectRegistration}
+                  variant="ghost"
+                  className="w-full h-auto py-4 rounded-2xl text-primary hover:bg-primary/5 underline hover:text-primary font-bold text-xl leading-tight"
+                >
+                  Prefer not to sign in, fill the form directly
+                </Button>
+              </>
             )}
-
-            <div className="relative flex py-2 items-center">
-              <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase tracking-widest">OR</span>
-              <div className="flex-grow border-t border-gray-300"></div>
-            </div>
-
-            <Button 
-              onClick={handleDirectRegistration}
-              variant="ghost"
-              className="w-full h-auto py-4 rounded-2xl text-primary hover:bg-primary/5 underline hover:text-primary font-bold text-xl leading-tight"
-            >
-              Prefer not to sign in, fill the form directly
-            </Button>
-
           </CardContent>
         </Card>
       </div>
