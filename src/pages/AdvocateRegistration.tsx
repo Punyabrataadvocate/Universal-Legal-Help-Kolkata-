@@ -324,16 +324,42 @@ export default function AdvocateRegistration() {
                     <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">{authError.message}</p>
                     {authError.code === 'auth/operation-not-allowed' && (
                       <div className="mt-2.5 pt-2 border-t border-red-100 text-[10px] space-y-2 text-gray-700 font-sans">
-                        <p className="font-bold text-red-800 uppercase tracking-wide">Action Required in Firebase Console:</p>
-                        <p className="leading-normal">
-                          By default, Firebase requires you to manually activate the Email/Password sign-in provider.
+                        <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-lg space-y-1 text-amber-800">
+                          <p className="font-bold flex items-center gap-1">🔍 Live Connection Diagnostics:</p>
+                          <p>
+                            Your app is currently connecting to Firebase Project: <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-amber-900 select-all font-semibold">{auth.app.options.projectId || "unknown"}</code>
+                          </p>
+                          {(auth.app.options.projectId === "project-ea3971ef-4fe4-43cd-8ef" || auth.app.options.projectId?.startsWith("project-")) ? (
+                            <p className="text-gray-600 mt-1 leading-normal font-sans">
+                              <strong>⚠️ CONFIGURATION MISMATCH:</strong> This is the temporary AI Studio sandbox project owned by Google. Your deployed Vercel site has not loaded your personal credentials yet, so it defaults to the sandbox database where email sign-on is disabled.
+                            </p>
+                          ) : (
+                            <p className="text-gray-600 mt-1 leading-normal font-sans">
+                              <strong>✅ Pointing to custom project:</strong> Your app is pointing to your custom project ID. If you already enabled Email/Password there, please double check in your Firebase Console that it saved correctly.
+                            </p>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-red-800 uppercase tracking-wide">STEP 1: Add your credentials to your Vercel Dashboard (Required)</p>
+                        <p className="leading-snug text-gray-600">
+                          To connect the Vercel site to your own project rather than the sandbox, add these in your Vercel Project settings:
                         </p>
-                        <ol className="list-decimal pl-4 space-y-1 mt-0.5 leading-normal text-gray-600">
+                        <ul className="list-disc pl-4 space-y-0.5 font-mono text-gray-600 text-[9px]">
+                          <li>FIREBASE_PROJECT_ID</li>
+                          <li>FIREBASE_API_KEY</li>
+                          <li>FIREBASE_APP_ID</li>
+                          <li>FIREBASE_AUTH_DOMAIN</li>
+                        </ul>
+                        <p className="leading-snug text-gray-600">
+                          After saving them, go to the <strong>Deployments</strong> tab in Vercel, and click <strong>Redeploy</strong> to bundle them!
+                        </p>
+
+                        <p className="font-bold text-red-800 uppercase tracking-wide pt-1">STEP 2: Verify in your Firebase Console</p>
+                        <ol className="list-decimal pl-4 space-y-1 leading-normal text-gray-600">
                           <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-bold">Firebase Console &rarr;</a></li>
                           <li>Open your active project.</li>
                           <li>Navigate to <strong>Authentication &rarr; Sign-in method</strong>.</li>
-                          <li>Click <strong>Add new provider</strong> (or click Edit if listed) and select <strong>Email/Password</strong>.</li>
-                          <li>Enable the <strong>Email/Password</strong> switch and click <strong>Save</strong>.</li>
+                          <li>Enable <strong>Email/Password</strong> and click Save.</li>
                         </ol>
                       </div>
                     )}

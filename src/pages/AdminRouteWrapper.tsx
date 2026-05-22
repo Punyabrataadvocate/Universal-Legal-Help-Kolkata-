@@ -294,19 +294,47 @@ export default function AdminRouteWrapper() {
                         )}
 
                         {authError.code === 'auth/operation-not-allowed' && (
-                          <div className="pt-2.5 border-t border-red-500/20 space-y-2 text-gray-300 font-sans text-left">
-                            <p className="font-bold text-[#c9a84c] uppercase tracking-wider text-[10px]">How to Enable Email/Password Sign-In:</p>
+                          <div className="pt-2.5 border-t border-red-500/20 space-y-2 text-gray-350 font-sans text-left">
+                            <div className="bg-amber-500/15 border border-amber-500/30 p-3 rounded-xl space-y-2 text-amber-200 text-xs">
+                              <p className="font-bold flex items-center gap-1">🔍 Live Connection Diagnostics:</p>
+                              <p className="leading-normal">
+                                Your browser is currently connecting to Firebase Project ID: <code className="bg-amber-950/60 px-1.5 py-0.5 rounded font-mono text-white select-all border border-amber-500/30">{auth.app.options.projectId || "unknown"}</code>
+                              </p>
+                              {(auth.app.options.projectId === "project-ea3971ef-4fe4-43cd-8ef" || auth.app.options.projectId?.startsWith("project-")) ? (
+                                <div className="text-gray-300 space-y-1.5 pt-1 border-t border-amber-500/10 text-xs leading-relaxed">
+                                  <p className="font-bold text-[#c9a84c]">⚠️ CONFIGURATION MISMATCH:</p>
+                                  <p>
+                                    Even though you enabled Email/Password sign-on in your personal project, your app version deployed on Vercel is still connected to the temporary <strong>AI Studio sandbox</strong> project!
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-gray-300 text-xs leading-relaxed">
+                                  <strong>✅ Pointing to Custom Project:</strong> Your app is pointing to your custom project ID. If you already enabled Email/Password there, please double check in your Firebase Console that it saved correctly.
+                                </p>
+                              )}
+                            </div>
+
+                            <p className="font-bold text-[#c9a84c] uppercase tracking-wider text-[10px] mt-2">STEP 1. Link Your Own credentials to Vercel (Required):</p>
                             <ol className="list-decimal pl-4 space-y-1.5 text-[10px] leading-relaxed text-gray-300">
-                              <li>Open the <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold flex-inline items-center gap-1">Firebase Console &rarr;</a></li>
-                              <li>Select your active Firebase Project.</li>
-                              <li>Go to <strong>Build (or Build menu) &rarr; Authentication</strong>.</li>
-                              <li>Select the <strong>Sign-in method</strong> tab at the top.</li>
-                              <li>Click <strong>Add new provider</strong> (or click Edit if listed) and click <strong>Email/Password</strong>.</li>
-                              <li>Turn on the toggle next to <strong>Email/Password</strong> (keep "Email link" disabled) and click <strong>Save</strong>.</li>
+                              <li>Go to your <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline inline-flex items-center gap-0.5 font-bold">Vercel Dashboard &rarr;</a></li>
+                              <li>Open your <strong>Legal Help Kolkata</strong> Project and go to <strong>Settings</strong> &rarr; <strong>Environment Variables</strong>.</li>
+                              <li>Add the following variables with your own Firebase details from your Firebase console:
+                                <ul className="list-disc pl-4 space-y-1 mt-1 font-mono text-gray-400 text-[9px]">
+                                  <li>FIREBASE_PROJECT_ID</li>
+                                  <li>FIREBASE_API_KEY</li>
+                                  <li>FIREBASE_APP_ID</li>
+                                  <li>FIREBASE_AUTH_DOMAIN</li>
+                                </ul>
+                              </li>
+                              <li>After saving, go to the Vercel <strong>Deployments</strong> tab and click <strong>Redeploy</strong> (rebuilding compiles your custom project ID into the client app bundle).</li>
                             </ol>
-                            <p className="text-[9px] text-amber-300/85 italic leading-normal pt-1">
-                              * After saving, return to this page and click verify to sign in successfully!
-                            </p>
+
+                            <p className="font-bold text-[#c9a84c] uppercase tracking-wider text-[10px] pt-1">STEP 2. Verify settings in your Firebase Console:</p>
+                            <ol className="list-decimal pl-4 space-y-1.5 text-[10px] leading-relaxed text-gray-300">
+                              <li>Open the <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-bold">Firebase Console &rarr;</a></li>
+                              <li>Navigate to <strong>Build &rarr; Authentication &rarr; Sign-in method</strong>.</li>
+                              <li>Ensure <strong>Email/Password</strong> is listed as <strong>Enabled</strong>.</li>
+                            </ol>
                           </div>
                         )}
                       </div>
