@@ -1,61 +1,43 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Globals
-    function isSignedIn() { return request.auth != null; }
-    
-    // Admins Checks (Email from ADMIN_EMAILS or exists in admins collection)
-    function isAdmin() {
-      return isSignedIn() && request.auth.token.email != null && (
-        request.auth.token.email.lower() == 'mukherjipb@gmail.com' || 
-        request.auth.token.email.lower() == '1legalhelpkolkata@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()))
-      );
+
+    // Admin only collections
+    match /user_queries/{doc} {
+      allow read, write: if request.auth != null &&
+        (request.auth.token.email == "mukherjipb@gmail.com" ||
+         request.auth.token.email == "1legalhelpkolkata@gmail.com");
     }
 
-    match /user_queries/{queryId} {
-      allow create: if true; // Public submission
-      allow read, update, delete: if isSignedIn() && isAdmin();
-    }
-
-    match /public_advocates/{advocateId} {
-      allow read: if true; // Publicly visible directory
-      allow write: if isSignedIn() && isAdmin();
-    }
-
-    match /advocate_registrations/{registrationId} {
-      // Pending registrations
+    match /advocate_registrations/{doc} {
+      allow read, write: if request.auth != null &&
+        (request.auth.token.email == "mukherjipb@gmail.com" ||
+         request.auth.token.email == "1legalhelpkolkata@gmail.com");
       allow create: if true;
-      allow read, update, delete: if isSignedIn() && isAdmin();
     }
 
-    match /blog_posts/{postId} {
-      allow read: if true; // Public articles
-      allow create: if true; // Users can post QnA
-      allow update, delete: if isSignedIn() && isAdmin();
-
-      match /answers/{answerId} {
-        allow read: if true;
-        allow create, update, delete: if isSignedIn() && isAdmin();
-      }
-    }
-
-    match /admins/{email} {
-      allow read: if true; // needed to check if admin
-      allow write: if isSignedIn() && isAdmin();
-    }
-    
-    match /test/connection {
+    // Public collections
+    match /blog_questions/{doc} {
       allow read: if true;
-    }
-    
-    match /judgment_searches/{docId} {
       allow create: if true;
+      allow delete, update: if request.auth != null &&
+        (request.auth.token.email == "mukherjipb@gmail.com" ||
+         request.auth.token.email == "1legalhelpkolkata@gmail.com");
     }
-    
-    // Catch-all
-    match /{document=**} {
-      allow read, write: if false;
+
+    match /blog_answers/{doc} {
+      allow read: if true;
+      allow create: if true;
+      allow delete, update: if request.auth != null &&
+        (request.auth.token.email == "mukherjipb@gmail.com" ||
+         request.auth.token.email == "1legalhelpkolkata@gmail.com");
+    }
+
+    match /public_advocates/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        (request.auth.token.email == "mukherjipb@gmail.com" ||
+         request.auth.token.email == "1legalhelpkolkata@gmail.com");
     }
   }
 }

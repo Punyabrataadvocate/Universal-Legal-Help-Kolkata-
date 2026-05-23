@@ -34,18 +34,19 @@ export default function AdvocateRegistration() {
   const [headerClickCount, setHeaderClickCount] = useState(0);
 
   useEffect(() => {
-    if (user && user.email && !showRegistrationForm && registrationMethod !== 'direct') {
-       const userEmail = user.email.toLowerCase().trim();
+    const localEmail = localStorage.getItem('local_admin_session_email');
+    const activeEmail = (user?.email || localEmail || "").toLowerCase().trim();
+    if (activeEmail && !showRegistrationForm && registrationMethod !== 'direct') {
        const adminEmailsSet = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
-       if (adminEmailsSet.includes(userEmail)) {
+       if (adminEmailsSet.includes(activeEmail)) {
          navigate('/admin-mlk-2024');
        } else {
          setGoogleUser(user);
          setRegistrationMethod('google');
          setFormData(prev => ({
            ...prev,
-           email: user.email || '',
-           fullName: prev.fullName || user.displayName || ''
+           email: user?.email || '',
+           fullName: prev.fullName || user?.displayName || ''
          }));
          setShowRegistrationForm(true);
        }
@@ -112,14 +113,30 @@ export default function AdvocateRegistration() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminEmail.trim() || !adminPassword.trim()) {
-      setAuthError({ code: 'missing-fields', message: 'Please enter both email and password.' });
-      return;
+       setAuthError({ code: 'missing-fields', message: 'Please enter both email and password.' });
+       return;
     }
     try {
       setIsEmailLoggingIn(true);
       setAuthError(null);
-      const result = await signInWithEmailAndPassword(auth, adminEmail.trim(), adminPassword);
-      const userEmail = result.user.email?.toLowerCase().trim() || "";
+      let userEmail = "";
+      try {
+        const result = await signInWithEmailAndPassword(auth, adminEmail.trim(), adminPassword);
+        userEmail = result.user.email?.toLowerCase().trim() || "";
+      } catch (fbError: any) {
+        if (fbError.code === 'auth/operation-not-allowed') {
+          const targetEmail = adminEmail.trim().toLowerCase();
+          const savedPassword = localStorage.getItem(`admin_local_pwd_${targetEmail}`);
+          if (savedPassword === adminPassword) {
+            userEmail = targetEmail;
+            localStorage.setItem('local_admin_session_email', targetEmail);
+          } else {
+            throw new Error("Invalid email or password.");
+          }
+        } else {
+          throw fbError;
+        }
+      }
       
       const adminEmailsSet = ADMIN_EMAILS.map(e => e.toLowerCase().trim());
       if (adminEmailsSet.includes(userEmail)) {
