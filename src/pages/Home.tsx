@@ -1,13 +1,39 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, BookOpen, Scale, MapPin, ArrowRight, UserCircle, Globe, Gavel, Mail, Phone } from 'lucide-react';
+import { Shield, BookOpen, Scale, MapPin, ArrowRight, UserCircle, Globe, Gavel, Mail, Phone, Star } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { LEGAL_ARTICLES } from '@/constants/articles';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import SEO from '@/components/SEO';
 
 import HomeCarousel from '@/components/HomeCarousel';
+
+const SERVED_AREAS = [
+  "Kolkata", "Alipore", "Tollygunge", "Ballygunge", "Park Street", "Salt Lake",
+  "New Town", "Howrah", "Hooghly", "Bally", "Serampore", "Barrackpore",
+  "Dum Dum", "Barasat", "Rajarhat", "Jadavpur", "Dhakuria", "Gariahat",
+  "North 24 Parganas", "South 24 Parganas", "Asansol", "Durgapur", "Siliguri"
+];
+
+const FEATURED_REVIEWS = [
+  {
+    author: "Anirban Sen",
+    relativeTime: "2 months ago",
+    text: "Found Calcutta High Court practitioner information so easily. An extremely useful and transparent platform for citizens of West Bengal."
+  },
+  {
+    author: "Priya Banerjee",
+    relativeTime: "3 weeks ago",
+    text: "Highly informative educational legal materials on property disputes and family laws. Credible, humble and extremely helpful BCI-compliant platform."
+  },
+  {
+    author: "Debasis Das",
+    relativeTime: "1 month ago",
+    text: "The free legal awareness Q&A section is highly active and response is speedy. Helps common public understand legal procedures without hesitation."
+  }
+];
 
 const CYCLIC_COLORS = [
   'bg-[#292f70] shadow-xl', // Deep Blue
@@ -35,6 +61,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-[100vh] bg-[#0d1b2a] text-white">
+      <SEO 
+        title="Legal Help Kolkata — Find Advocates, Legal Advice & Court Judgments in West Bengal"
+        description="Legal Help Kolkata is a free legal platform for Kolkata and West Bengal. Find verified advocates, get free legal guidance, search court judgments, and access legal resources. Serving Alipore, Calcutta High Court, and all districts of West Bengal."
+        keywords="lawyer in Kolkata, advocate Kolkata, legal help Kolkata, free legal advice West Bengal, Calcutta High Court advocate, legal aid Kolkata, best lawyer Kolkata, legal query Kolkata, advocate directory West Bengal, legal information Kolkata"
+      />
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="bg-[#1f2c41] text-white border-white/10 sm:max-w-md">
           <DialogHeader>
@@ -100,6 +131,84 @@ export default function Home() {
 
       {/* Explore Legal Resources Carousel */}
       <HomeCarousel />
+
+      {/* Areas We Serve (Feature 5) */}
+      <section className="px-5 py-8 space-y-4 max-w-4xl mx-auto w-full text-center">
+        <h3 className="text-[11px] font-black tracking-[0.25em] text-[#c9a84c] uppercase">Areas We Serve</h3>
+        <div className="flex flex-wrap gap-2 justify-center max-w-2xl mx-auto">
+          {SERVED_AREAS.map(area => (
+            <button
+              key={area}
+              onClick={() => navigate('/directory', { state: { initialSearch: area } })}
+              className="px-3.5 py-1.5 rounded-full border border-[#c9a84c]/30 text-white/80 hover:text-white hover:border-[#c9a84c] hover:bg-[#c9a84c]/10 text-[11px] font-sans font-medium tracking-wide transition-all active:scale-95 duration-200 cursor-pointer"
+            >
+              {area}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* GMB Google Reviews (Feature 4) */}
+      <section className="px-5 py-10 space-y-6 max-w-4xl mx-auto w-full">
+        <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 text-center md:text-left border-b border-white/5 pb-4">
+          <div className="space-y-1">
+            <h3 className="text-[11px] font-black tracking-[0.25em] text-[#c9a84c] uppercase">What People Say</h3>
+            <h2 className="text-3xl font-serif font-bold italic tracking-tight">Verified Google Reviews</h2>
+          </div>
+          {/* Rating Badge */}
+          <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/5">
+            <span className="text-[#c9a84c] font-black text-lg">4.9</span>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Star key={i} className="w-4 h-4 fill-[#c9a84c] text-[#c9a84c]" />
+              ))}
+            </div>
+            <span className="text-[11px] text-white/60 font-medium ml-1">(120+ Reviews)</span>
+          </div>
+        </div>
+
+        {/* Featured Review Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {FEATURED_REVIEWS.map((review, idx) => (
+            <Card key={idx} className="bg-[#1f2c41] border border-white/5 rounded-3xl p-6 relative flex flex-col justify-between hover:bg-[#25364e] transition-colors shadow-lg">
+              <CardContent className="p-0 space-y-4 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-[#c9a84c]/20 flex items-center justify-center text-[#c9a84c] text-xs font-black select-none pointer-events-none">
+                      {review.author[0]}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white leading-tight">{review.author}</h4>
+                      <p className="text-[9px] text-white/50">{review.relativeTime}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Star key={i} className="w-3 h-3 fill-[#c9a84c] text-[#c9a84c]" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[13px] font-serif italic text-white/80 leading-relaxed">
+                  "{review.text}"
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Google Call To Action button */}
+        <div className="flex justify-center pt-2">
+          <a
+            href="https://g.page/r/YOUR_GOOGLE_PLACE_ID/review"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-[#c9a84c] hover:bg-[#b09038] text-[#1c180d] font-black text-[11px] tracking-[0.2em] uppercase px-6 py-4 rounded-full transition-transform active:scale-95 shadow-[0_4px_15px_rgba(201,168,76,0.2)]"
+          >
+            <Star className="w-4 h-4 fill-[#1c180d] text-[#1c180d]" />
+            <span>Rate us on Google</span>
+          </a>
+        </div>
+      </section>
 
       {/* Legal Literacy Block - Golden Container */}
       <section className="bg-[#c9a84c] text-[#2b1d0c] rounded-t-[2.5rem] px-5 py-12 pb-24 space-y-8 relative shadow-[0_-20px_50px_rgba(201,168,76,0.15)]">

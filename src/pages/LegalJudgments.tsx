@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Search, Scale, AlertCircle, ExternalLink, ShieldCheck, Home as HomeIcon, Briefcase, FileText, ShoppingBag, Car, Users, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import SEO from '@/components/SEO';
 
 const QUICK_TOPICS = [
   "Property Dispute", "Matrimonial Cases", "Bail Application", 
@@ -69,6 +70,10 @@ export default function LegalJudgments() {
 
   return (
     <div className="min-h-screen bg-[#0a192f] text-white pb-24">
+      <SEO 
+        title="Legal Judgments — Calcutta High Court & Supreme Court Orders | Legal Help Kolkata"
+        description="Search and access latest judgments from Calcutta High Court, Supreme Court of India, and West Bengal district courts. Free legal judgment database for Kolkata."
+      />
       {/* Page Header */}
       <div className="bg-[#0b131e] pt-12 pb-8 px-6 border-b border-[#c9a84c]/20">
         <div className="max-w-4xl mx-auto flex items-center gap-4">

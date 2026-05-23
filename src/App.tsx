@@ -19,7 +19,7 @@ import LegalJudgments from './pages/LegalJudgments';
 import AdminRouteWrapper from './pages/AdminRouteWrapper';
 import AdvocateRegistration from './pages/AdvocateRegistration';
 import BottomNav from './components/BottomNav';
-import { Scale, WifiOff } from 'lucide-react';
+import { Scale, WifiOff, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { requestPushPermission } from './lib/native';
 import { db } from './lib/firebase';
@@ -118,6 +118,20 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
+      {/* Floating WhatsApp Share Button (Feature 10) */}
+      {(agreed && !showSplash) && (
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(
+            "Legal Help Kolkata - Free legal platform for Kolkata and West Bengal. Find advocates, get legal guidance, and access court judgments for free. Visit: https://legal-help-kolkata-rho.vercel.app"
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-24 right-5 z-[80] bg-[#25d366] text-white p-3.5 rounded-full shadow-[0_4px_15px_rgba(37,211,102,0.4)] hover:bg-[#20ba5a] hover:scale-110 active:scale-95 transition-all outline-none border border-white/10 flex items-center justify-center"
+          aria-label="Share on WhatsApp"
+        >
+          <MessageCircle className="w-6 h-6 fill-white text-[#25d366]" />
+        </a>
+      )}
       {(agreed && !showSplash) && <BottomNav />}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import SEO from '@/components/SEO';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -205,6 +206,10 @@ export default function Blog() {
 
   return (
     <div className="flex flex-col min-h-[100vh] bg-[#0d1b2a] text-white">
+      <SEO 
+        title="Free Legal Q&A Kolkata — Ask Legal Questions | Legal Help Kolkata"
+        description="Post your legal questions for free on Legal Help Kolkata. Get general guidance on property disputes, criminal cases, family law, consumer rights, and more from advocates in West Bengal."
+      />
       
       {/* Header Area */}
       <section className="px-6 pt-12 pb-8 text-center space-y-4">

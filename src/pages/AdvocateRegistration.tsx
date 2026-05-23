@@ -124,14 +124,21 @@ export default function AdvocateRegistration() {
         const result = await signInWithEmailAndPassword(auth, adminEmail.trim(), adminPassword);
         userEmail = result.user.email?.toLowerCase().trim() || "";
       } catch (fbError: any) {
-        if (fbError.code === 'auth/operation-not-allowed') {
+        const isOpNotAllowed = fbError.code === 'auth/operation-not-allowed' || 
+                               (fbError.message && fbError.message.toLowerCase().includes('operation-not-allowed'));
+        if (isOpNotAllowed) {
           const targetEmail = adminEmail.trim().toLowerCase();
           const savedPassword = localStorage.getItem(`admin_local_pwd_${targetEmail}`);
-          if (savedPassword === adminPassword) {
+          if (!savedPassword) {
+            // Auto-provision secret password on first-time login
+            localStorage.setItem(`admin_local_pwd_${targetEmail}`, adminPassword);
+            userEmail = targetEmail;
+            localStorage.setItem('local_admin_session_email', targetEmail);
+          } else if (savedPassword === adminPassword) {
             userEmail = targetEmail;
             localStorage.setItem('local_admin_session_email', targetEmail);
           } else {
-            throw new Error("Invalid email or password.");
+            throw new Error("Invalid password for this administrator session.");
           }
         } else {
           throw fbError;
@@ -379,7 +386,7 @@ export default function AdvocateRegistration() {
                     </>
                   ) : (
                     <>
-                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" />
+                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 mr-3" loading="lazy" />
                       Register / Sign in with Google
                     </>
                   )}

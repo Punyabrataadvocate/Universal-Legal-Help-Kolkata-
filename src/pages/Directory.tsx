@@ -14,7 +14,8 @@ import { handleFirestoreError, OperationType } from '@/lib/firestoreErrorHandler
 import { LEGAL_CATEGORIES } from '@/constants/legal';
 import { ADMIN_EMAILS } from '@/constants/admins';
 import { seedDatabase } from '@/lib/seed';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import SEO from '@/components/SEO';
 
 interface Advocate {
   id: string;
@@ -27,6 +28,7 @@ interface Advocate {
 
 export default function Directory() {
   const [user] = useAuthState(auth);
+  const location = useLocation();
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +37,18 @@ export default function Directory() {
   const [selectedAdvocate, setSelectedAdvocate] = useState<Advocate | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (location.state && (location.state as any).initialSearch) {
+      setSearchTerm((location.state as any).initialSearch);
+    } else {
+      const params = new URLSearchParams(location.search);
+      const q = params.get('search');
+      if (q) {
+        setSearchTerm(q);
+      }
+    }
+  }, [location]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -98,7 +112,8 @@ export default function Directory() {
 
   const filteredAdvocates = advocates.filter(adv => {
     const matchesSearch = adv.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      adv.specialization.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+      adv.specialization.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (adv.courtOfPractice && adv.courtOfPractice.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCategories = selectedCategories.length === 0 ||
       selectedCategories.some(cat => adv.specialization.includes(cat));
@@ -110,6 +125,10 @@ export default function Directory() {
 
   return (
     <div className="flex flex-col min-h-[100vh] bg-[#0d1b2a] text-white">
+      <SEO 
+        title="Advocate Directory Kolkata — Find Verified Lawyers in West Bengal | Legal Help Kolkata"
+        description="Browse verified advocates and lawyers in Kolkata and West Bengal. Find specialists in civil law, criminal law, family law, property disputes, and more. All advocates listed are Bar Council enrolled practitioners."
+      />
       {/* Header */}
       <section className="px-6 pt-10 pb-6 text-center">
         <h1 className="text-4xl md:text-5xl font-serif font-bold italic tracking-tight leading-none text-white">

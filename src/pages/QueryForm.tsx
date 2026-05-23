@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from 'lucide-react';
 import { handleFirestoreError, OperationType } from '@/lib/firestoreErrorHandler';
 import { LEGAL_CATEGORIES } from '@/constants/legal';
+import SEO from '@/components/SEO';
 
 export default function QueryForm({ lang }: { lang?: 'en' | 'bn' }) {
   const navigate = useNavigate();
@@ -106,6 +107,10 @@ export default function QueryForm({ lang }: { lang?: 'en' | 'bn' }) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
+      <SEO 
+        title="Submit Legal Query — Free Legal Help in Kolkata | Legal Help Kolkata"
+        description="Submit your legal query to Legal Help Kolkata for free. Get connected with advocates in Kolkata and West Bengal for guidance on your legal matter."
+      />
       <Card className="border-2 border-primary/10 shadow-xl overflow-hidden">
         <CardHeader className="bg-primary text-white text-center py-10">
           <CardTitle className="text-3xl font-serif mb-2">Submit a Legal Query</CardTitle>

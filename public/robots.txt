@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin-mlk-2024
+Disallow: /advocate-login
+
+Sitemap: https://legal-help-kolkata-rho.vercel.app/sitemap.xml
